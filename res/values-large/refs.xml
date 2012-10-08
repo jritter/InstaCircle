@@ -1,0 +1,3 @@
+<resources>
+    <item type="layout" name="activity_adhocnetwork_list">@layout/activity_adhocnetwork_twopane</item>
+</resources>

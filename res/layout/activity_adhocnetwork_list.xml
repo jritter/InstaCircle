@@ -1,0 +1,23 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linear_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:orientation="vertical" >
+
+    <fragment
+        android:id="@+id/adhocnetwork_list"
+        android:name="ch.bfh.adhocnetwork.AdhocNetworkListFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        tools:context=".AdhocNetworkListActivity" />
+
+    <fragment
+        android:name="ch.bfh.adhocnetwork.AdhocNetworkSendFragment"
+        android:layout_width="match_parent"
+        android:layout_height="50dp" />
+
+</LinearLayout>
