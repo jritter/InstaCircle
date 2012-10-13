@@ -3,5 +3,6 @@
     <string name="app_name">Adhoc Network</string>
     <string name="title_adhocnetwork_detail">Adhoc Network</string>
     <string name="title_adhocnetwork_list">Adhoc Network</string>
+    <string name="enable_wifiap_button">Enable WiFi AP</string>
 
 </resources>

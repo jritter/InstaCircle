@@ -20,6 +20,7 @@ public class UDPBroadcastReceiverThread implements Runnable {
 		Message msg;
 		try {
 			socket = new DatagramSocket(12345);
+			socket.setBroadcast(true);
 			while (true) {
 
 				DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);

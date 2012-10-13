@@ -48,46 +48,7 @@ public class AdhocNetworkService extends Service {
 		LocalBroadcastManager.getInstance(this).registerReceiver(
 				mMessageReceiver, new IntentFilter("messageSend"));
 
-		Enumeration<NetworkInterface> interfaces;
-		try {
-			interfaces = NetworkInterface.getNetworkInterfaces();
-
-			while (interfaces.hasMoreElements()) {
-				NetworkInterface networkInterface = interfaces.nextElement();
-				if (networkInterface.isLoopback())
-					continue; // Don't want to broadcast to the loopback
-								// interface
-				for (InterfaceAddress interfaceAddress : networkInterface
-						.getInterfaceAddresses()) {
-					broadcast = interfaceAddress.getBroadcast();
-
-					if (broadcast == null) {
-						continue;
-					} else {
-						Log.d(TAG, broadcast.getHostAddress());
-					}
-				}
-			}
-
-			if (broadcast == null) {
-				try {
-					broadcast = InetAddress.getByName("192.168.1.255");
-				} catch (UnknownHostException e) {
-					e.printStackTrace();
-				}
-			}
-			try {
-				broadcast = InetAddress.getByName("192.168.1.255");
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			Log.d(TAG, "using " + broadcast.getHostAddress());
-		} catch (SocketException e) {
-
-			e.printStackTrace();
-		}
-
+		broadcast = getBroadcastAddress();
 	}
 
 	public void processMessage(Message msg) {
@@ -132,5 +93,65 @@ public class AdhocNetworkService extends Service {
 			new BroadcastMessageAsyncTask().execute(msg);
 		}
 	};
+	
+	public InetAddress getBroadcastAddress() {
+		InetAddress found_bcast_address = null;
+		System.setProperty("java.net.preferIPv4Stack", "true");
+		try {
+			Enumeration<NetworkInterface> niEnum = NetworkInterface
+					.getNetworkInterfaces();
+			while (niEnum.hasMoreElements()) {
+				NetworkInterface ni = niEnum.nextElement();
+				
+				if (ni.getDisplayName().contains("p2p-wlan")){
+					for (InterfaceAddress interfaceAddress : ni
+							.getInterfaceAddresses()) {
+
+						found_bcast_address = interfaceAddress.getBroadcast();
+						
+						// found_bcast_address =
+						// found_bcast_address.substring(1);
+
+					}
+					if (found_bcast_address != null){
+						Log.d(TAG, "found p2p Broadcast address: " + found_bcast_address.toString());
+						break;
+					}
+				}
+				
+			}
+			
+			if (found_bcast_address == null){
+				Log.d(TAG, "no p2p Broadcast addresses found, now trying to find network broadcast adresses");
+				niEnum = NetworkInterface.getNetworkInterfaces();
+				while (niEnum.hasMoreElements()) {
+					NetworkInterface ni = niEnum.nextElement();
+					Log.d(TAG, "looping...");
+					if (!ni.isLoopback()) {
+						for (InterfaceAddress interfaceAddress : ni
+								.getInterfaceAddresses()) {
+	
+							found_bcast_address = interfaceAddress.getBroadcast();
+							
+							// found_bcast_address =
+							// found_bcast_address.substring(1);
+	
+						}
+						
+						if (found_bcast_address != null){
+							Log.d(TAG, "found Broadcast address: " + found_bcast_address.toString());
+							break;
+						}
+						
+					}
+				}
+			}
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+
+		return found_bcast_address;
+	}
+
 
 }
