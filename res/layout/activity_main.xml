@@ -1,0 +1,61 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+    
+    
+    <TextView
+        android:id="@+id/join_network_textview"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:gravity="center_vertical"
+        android:text="@string/join_existing_network" />
+    
+    <View
+        android:id="@+id/join_network_separator"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_alignBottom="@+id/join_network_textview"
+        android:layout_alignParentLeft="true"
+        android:background="@android:color/holo_blue_light"
+        android:gravity="center_vertical" />
+    
+    <View
+        android:id="@+id/create_network_separator"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_above="@+id/create_network_button"
+        android:layout_alignParentLeft="true"
+        android:background="@android:color/holo_blue_light"
+        android:gravity="center_vertical" />
+    
+    <Button
+        android:id="@+id/create_network_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:text="@string/create_new_network" />
+
+    <TextView
+        android:id="@+id/create_network_textview"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/create_network_button"
+        android:layout_alignParentLeft="true"
+        android:gravity="center_vertical"
+        android:text="@string/create_new_network" />
+
+    <ListView
+        android:id="@+id/network_listview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/create_network_textview"
+        android:layout_alignTop="@+id/join_network_separator"
+        android:layout_centerHorizontal="true" >
+
+    </ListView>
+
+</RelativeLayout>

@@ -41,6 +41,8 @@ public class WifiAPManager {
 												// the wifi always being enabled
 												// after wifi ap is disabled
 
+	
+	private WifiConfiguration config;
 	/**
 	 * Toggle the WiFi AP state
 	 * 
@@ -54,8 +56,29 @@ public class WifiAPManager {
 
 		boolean wifiApIsOn = getWifiAPState() == WIFI_AP_STATE_ENABLED
 				|| getWifiAPState() == WIFI_AP_STATE_ENABLING;
-		new SetWifiAPTask(!wifiApIsOn, false, context).execute();
+		new SetWifiAPTask(!wifiApIsOn, context).execute();
 	}
+	
+	public void enableHotspot(WifiManager wifihandler, WifiConfiguration config, Context context) {
+		this.config = config;
+		
+		if (wifi == null) {
+			wifi = wifihandler;
+		}
+		
+		new SetWifiAPTask(true, context).execute();
+	}
+	
+
+	public void disableHotspot(WifiManager wifihandler, Context context) {
+		
+		if (wifi == null) {
+			wifi = wifihandler;
+		}
+		
+		new SetWifiAPTask(false, context).execute();
+	}
+	
 
 	/**
 	 * Enable/disable wifi
@@ -67,9 +90,9 @@ public class WifiAPManager {
 	private int setWifiApEnabled(boolean enabled) {
 		Log.d(TAG, "*** setWifiApEnabled CALLED **** " + enabled);
 
-		WifiConfiguration config = new WifiConfiguration();
-		config.SSID = "My AP";
-		config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+//		WifiConfiguration config = new WifiConfiguration();
+//		config.SSID = "My AP";
+//		config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
 
 		// remember wirelesses current state
 		if (enabled && stateWifiWasIn == -1) {
@@ -203,8 +226,8 @@ public class WifiAPManager {
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
 	class SetWifiAPTask extends AsyncTask<Void, Void, Void> {
+		
 		boolean mMode; // enable or disable wifi AP
-		boolean mFinish; // finalize or not (e.g. on exit)
 		ProgressDialog d;
 
 		/**
@@ -218,9 +241,8 @@ public class WifiAPManager {
 		 *            the context of the calling activity
 		 * @author http://stackoverflow.com/a/7049074/1233435
 		 */
-		public SetWifiAPTask(boolean mode, boolean finish, Context context) {
+		public SetWifiAPTask(boolean mode, Context context) {
 			mMode = mode;
-			mFinish = finish;
 			d = new ProgressDialog(context);
 		}
 
@@ -248,5 +270,13 @@ public class WifiAPManager {
 			setWifiApEnabled(mMode);
 			return null;
 		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			d.dismiss();
+		}
+		
+		
 	}
 }

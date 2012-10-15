@@ -4,5 +4,15 @@
     <string name="title_adhocnetwork_detail">Adhoc Network</string>
     <string name="title_adhocnetwork_list">Adhoc Network</string>
     <string name="enable_wifiap_button">Enable WiFi AP</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="rescan">Rescan</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="create_new_network">CREATE NEW NETWORK</string>
+    <string name="join_existing_network">JOIN EXISTING NETWORK</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_create_network">MainActivity</string>
+    <string name="network_name_label">Network Name</string>
+    <string name="network_pin_label">Network PIN</string>
+    <string name="create_network">Create Network</string>
 
 </resources>
