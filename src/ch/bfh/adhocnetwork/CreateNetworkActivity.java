@@ -5,7 +5,11 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,6 +20,8 @@ import android.widget.Toast;
 import android.support.v4.app.NavUtils;
 
 public class CreateNetworkActivity extends Activity implements OnClickListener {
+	
+	private static final String TAG = CreateNetworkActivity.class.getSimpleName();
 
     private WifiAPManager wifiapman;
 	private WifiManager wifiman;
@@ -40,6 +46,22 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
         
         wifiapman = new WifiAPManager();
 		wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		
+		Log.d(TAG, "AP Enabled: " + wifiapman.isWifiAPEnabled());
+		
+		if (wifiapman.isWifiAPEnabled()){
+			 AlertDialog.Builder builder = new AlertDialog.Builder(this);
+	            builder.setTitle("WiFi AP");
+	            builder.setMessage("The Wifi AP already enabled. Use this connection?");
+	            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+	                public void onClick(DialogInterface dialog, int which) {
+	                	Intent intent = new Intent(CreateNetworkActivity.this, AdhocNetworkListActivity.class);
+	        			startActivity(intent);
+
+	                } });
+	            AlertDialog dialog = builder.create();
+	            dialog.show();
+		}
     }
 
     @Override
@@ -62,6 +84,7 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 	public void onClick(View view) {
 		
 		if (view == btnCreateNetwork){
+			
 			Toast.makeText(this, "Toggle WiFi AP", Toast.LENGTH_SHORT).show();
 			
 			WifiConfiguration wificonfig = new WifiConfiguration();

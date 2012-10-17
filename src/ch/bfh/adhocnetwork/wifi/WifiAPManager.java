@@ -2,12 +2,16 @@ package ch.bfh.adhocnetwork.wifi;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.sax.StartElementListener;
 import android.util.Log;
 
 import java.lang.reflect.Method;
+
+import ch.bfh.adhocnetwork.AdhocNetworkListActivity;
 
 /**
  * Handle enabling and disabling of WiFi AP
@@ -219,6 +223,16 @@ public class WifiAPManager {
 						- constant]));
 		return state;
 	}
+	
+	public boolean isWifiAPEnabled() {
+		try {
+			Method method = wifi.getClass().getMethod("isWifiApEnabled");
+			return (Boolean) method.invoke(wifi);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 
 	/**
 	 * the AsyncTask to enable/disable the wifi ap
@@ -227,8 +241,10 @@ public class WifiAPManager {
 	 */
 	class SetWifiAPTask extends AsyncTask<Void, Void, Void> {
 		
-		boolean mMode; // enable or disable wifi AP
-		ProgressDialog d;
+		private boolean mMode; // enable or disable wifi AP
+		private ProgressDialog d;
+		private Context context;
+		
 
 		/**
 		 * enable/disable the wifi ap
@@ -242,6 +258,7 @@ public class WifiAPManager {
 		 * @author http://stackoverflow.com/a/7049074/1233435
 		 */
 		public SetWifiAPTask(boolean mode, Context context) {
+			this.context = context;
 			mMode = mode;
 			d = new ProgressDialog(context);
 		}
@@ -275,6 +292,8 @@ public class WifiAPManager {
 		protected void onPostExecute(Void result) {
 			super.onPostExecute(result);
 			d.dismiss();
+			Intent intent = new Intent(context, AdhocNetworkListActivity.class);
+			context.startActivity(intent);
 		}
 		
 		

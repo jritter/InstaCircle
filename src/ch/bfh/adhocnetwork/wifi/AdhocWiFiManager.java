@@ -1,9 +1,11 @@
 package ch.bfh.adhocnetwork.wifi;
 
+import ch.bfh.adhocnetwork.AdhocNetworkListActivity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
@@ -88,6 +90,8 @@ public class AdhocWiFiManager {
 			d.dismiss();
 			if (success){
 				Toast.makeText(context, "Successfully connected to Network " + config.SSID + ".", Toast.LENGTH_SHORT).show();
+				Intent intent = new Intent(context, AdhocNetworkListActivity.class);
+				context.startActivity(intent);
 			}
 			else {
 				AlertDialog.Builder alertDialog = new AlertDialog.Builder(context);
