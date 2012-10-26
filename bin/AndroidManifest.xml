@@ -20,11 +20,15 @@
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Holo" >
         <activity
-            android:name=".AdhocNetworkListActivity"
+            android:name=".MessageListActivity"
             android:label="@string/title_adhocnetwork_list" >
         </activity>
         <activity
-            android:name=".AdhocNetworkDetailActivity"
+            android:name=".NetworkActiveActivity"
+            android:label="@string/title_adhocnetwork_list" >
+        </activity>
+        <activity
+            android:name=".MessageDetailActivity"
             android:label="@string/title_adhocnetwork_detail" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -32,7 +36,7 @@
         </activity>
 
         <service
-            android:name=".AdhocNetworkService"
+            android:name=".service.NetworkService"
             android:enabled="true"
             android:exported="true" >
         </service>

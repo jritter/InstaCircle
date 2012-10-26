@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.adhocnetwork.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,8 +10,9 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Enumeration;
+
+import ch.bfh.adhocnetwork.Message;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -24,13 +25,13 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
-public class AdhocNetworkService extends Service {
+public class NetworkService extends Service {
 
-	private static final String TAG = AdhocNetworkService.class.getSimpleName();
+	private static final String TAG = NetworkService.class.getSimpleName();
 	private InetAddress broadcast;
 	private DatagramSocket s;
 
-	public AdhocNetworkService() {
+	public NetworkService() {
 	}
 
 	@Override
@@ -62,6 +63,11 @@ public class AdhocNetworkService extends Service {
 	private class BroadcastMessageAsyncTask extends
 			AsyncTask<Message, Integer, Integer> {
 		protected Integer doInBackground(Message... msg) {
+			
+			if (broadcast == null){
+				broadcast = getBroadcastAddress();
+			}
+			
 			Log.d(TAG, "Broadcasting message");
 
 			try {

@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.adhocnetwork.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -7,11 +7,13 @@ import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+import ch.bfh.adhocnetwork.Message;
+
 public class UDPBroadcastReceiverThread implements Runnable { 
 	
-	AdhocNetworkService service;
+	NetworkService service;
 	
-	public UDPBroadcastReceiverThread(AdhocNetworkService service) {
+	public UDPBroadcastReceiverThread(NetworkService service) {
 		this.service = service;
 	}
 

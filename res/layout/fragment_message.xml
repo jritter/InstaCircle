@@ -9,14 +9,14 @@
 
     <fragment
         android:id="@+id/adhocnetwork_list"
-        android:name="ch.bfh.adhocnetwork.AdhocNetworkListFragment"
+        android:name="ch.bfh.adhocnetwork.MessageListFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
         tools:context=".AdhocNetworkListActivity" />
 
     <fragment
-        android:name="ch.bfh.adhocnetwork.AdhocNetworkSendFragment"
+        android:name="ch.bfh.adhocnetwork.MessageSendFragment"
         android:layout_width="match_parent"
         android:layout_height="50dp" />
 

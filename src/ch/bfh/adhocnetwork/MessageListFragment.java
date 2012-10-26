@@ -3,6 +3,7 @@ package ch.bfh.adhocnetwork;
 import java.util.ArrayList;
 
 import ch.bfh.adhocnetwork.dummy.DummyContent;
+import ch.bfh.adhocnetwork.service.NetworkService;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -18,9 +19,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class AdhocNetworkListFragment extends ListFragment {
+public class MessageListFragment extends ListFragment {
 
-	private static final String TAG = AdhocNetworkService.class.getSimpleName();
+	private static final String TAG = NetworkService.class.getSimpleName();
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
 
     private Callbacks mCallbacks = sDummyCallbacks;
@@ -38,7 +39,7 @@ public class AdhocNetworkListFragment extends ListFragment {
         }
     };
 
-    public AdhocNetworkListFragment() {
+    public MessageListFragment() {
     }
 
     @Override
@@ -50,7 +51,7 @@ public class AdhocNetworkListFragment extends ListFragment {
         messages.add(msg);
         
         setListAdapter(new ArrayAdapter<Message>(getActivity(),
-                R.layout.rowlayout,
+                R.layout.list_item_message,
                 R.id.label,
                 messages));
         
@@ -71,11 +72,11 @@ public class AdhocNetworkListFragment extends ListFragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        if (!(activity instanceof Callbacks)) {
-            throw new IllegalStateException("Activity must implement fragment's callbacks.");
-        }
-
-        mCallbacks = (Callbacks) activity;
+//        if (!(activity instanceof Callbacks)) {
+//            throw new IllegalStateException("Activity must implement fragment's callbacks.");
+//        }
+//
+//        mCallbacks = (Callbacks) activity;
     }
 
     @Override
@@ -133,7 +134,7 @@ public class AdhocNetworkListFragment extends ListFragment {
 			messages.add(msg);
 			
 			setListAdapter(new ArrayAdapter<Message>(getActivity(),
-	                R.layout.rowlayout,
+	                R.layout.list_item_message,
 	                R.id.label,
 	                messages));
 		}

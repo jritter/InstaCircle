@@ -47,17 +47,20 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
         wifiapman = new WifiAPManager();
 		wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		
-		Log.d(TAG, "AP Enabled: " + wifiapman.isWifiAPEnabled());
 		
-		if (wifiapman.isWifiAPEnabled()){
+		
+		if (wifiapman.isWifiAPEnabled(wifiman)){
 			 AlertDialog.Builder builder = new AlertDialog.Builder(this);
 	            builder.setTitle("WiFi AP");
 	            builder.setMessage("The Wifi AP already enabled. Use this connection?");
-	            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+	            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 	                public void onClick(DialogInterface dialog, int which) {
-	                	Intent intent = new Intent(CreateNetworkActivity.this, AdhocNetworkListActivity.class);
+	                	Intent intent = new Intent(CreateNetworkActivity.this, NetworkActiveActivity.class);
 	        			startActivity(intent);
-
+	                } });
+	            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+	                public void onClick(DialogInterface dialog, int which) {
+	                	return;
 	                } });
 	            AlertDialog dialog = builder.create();
 	            dialog.show();
@@ -85,7 +88,9 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 		
 		if (view == btnCreateNetwork){
 			
-			Toast.makeText(this, "Toggle WiFi AP", Toast.LENGTH_SHORT).show();
+			if (wifiapman.isWifiAPEnabled(wifiman)){
+				wifiapman.disableHotspot(wifiman, this);
+			}
 			
 			WifiConfiguration wificonfig = new WifiConfiguration();
 			wificonfig.SSID = txtNetworkName.getText().toString();

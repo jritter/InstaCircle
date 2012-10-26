@@ -8,20 +8,20 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
-public class AdhocNetworkDetailActivity extends FragmentActivity {
+public class MessageDetailActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_adhocnetwork_detail);
+        setContentView(R.layout.activity_message_detail);
 
         getActionBar().setDisplayHomeAsUpEnabled(true);
 
         if (savedInstanceState == null) {
             Bundle arguments = new Bundle();
-            arguments.putString(AdhocNetworkDetailFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(AdhocNetworkDetailFragment.ARG_ITEM_ID));
-            AdhocNetworkDetailFragment fragment = new AdhocNetworkDetailFragment();
+            arguments.putString(MessageDetailFragment.ARG_ITEM_ID,
+                    getIntent().getStringExtra(MessageDetailFragment.ARG_ITEM_ID));
+            MessageDetailFragment fragment = new MessageDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.adhocnetwork_detail_container, fragment)
@@ -32,7 +32,7 @@ public class AdhocNetworkDetailActivity extends FragmentActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
-            NavUtils.navigateUpTo(this, new Intent(this, AdhocNetworkListActivity.class));
+            NavUtils.navigateUpTo(this, new Intent(this, MessageFragment.class));
             return true;
         }
 

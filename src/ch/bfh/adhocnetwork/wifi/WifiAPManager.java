@@ -11,7 +11,8 @@ import android.util.Log;
 
 import java.lang.reflect.Method;
 
-import ch.bfh.adhocnetwork.AdhocNetworkListActivity;
+import ch.bfh.adhocnetwork.MessageFragment;
+import ch.bfh.adhocnetwork.NetworkActiveActivity;
 
 /**
  * Handle enabling and disabling of WiFi AP
@@ -133,6 +134,7 @@ public class WifiAPManager {
 			method1.invoke(wifi, config, enabled); // true
 			Method method2 = wifi.getClass().getMethod("getWifiApState");
 			state = (Integer) method2.invoke(wifi);
+			Log.d(TAG, "State: " + state);
 		} catch (Exception e) {
 			Log.e(TAG, e.getMessage());
 			// toastText += "ERROR " + e.getMessage();
@@ -196,7 +198,7 @@ public class WifiAPManager {
 	 * @return WifiAP state
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
-	public int getWifiAPState() {
+	private int getWifiAPState() {
 		int state = WIFI_AP_STATE_UNKNOWN;
 		try {
 			Method method2 = wifi.getClass().getMethod("getWifiApState");
@@ -224,7 +226,20 @@ public class WifiAPManager {
 		return state;
 	}
 	
-	public boolean isWifiAPEnabled() {
+	public int getWifiAPState(WifiManager wifihandler){
+		if (wifi == null) {
+			wifi = wifihandler;
+		}
+		
+		return getWifiAPState();
+	}
+	
+	public boolean isWifiAPEnabled(WifiManager wifihandler) {
+		
+		if (wifi == null) {
+			wifi = wifihandler;
+		}
+		
 		try {
 			Method method = wifi.getClass().getMethod("isWifiApEnabled");
 			return (Boolean) method.invoke(wifi);
@@ -292,8 +307,10 @@ public class WifiAPManager {
 		protected void onPostExecute(Void result) {
 			super.onPostExecute(result);
 			d.dismiss();
-			Intent intent = new Intent(context, AdhocNetworkListActivity.class);
-			context.startActivity(intent);
+			if (mMode){
+				Intent intent = new Intent(context, NetworkActiveActivity.class);
+				context.startActivity(intent);
+			}
 		}
 		
 		

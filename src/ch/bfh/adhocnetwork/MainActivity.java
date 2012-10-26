@@ -27,11 +27,7 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener {
 
-	@Override
-	protected void onStart() {
-		super.onStart();
-		scan();
-	}
+	
 
 	private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -55,6 +51,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		setContentView(R.layout.activity_main);
 
 		lv = (ListView) findViewById(R.id.network_listview);
@@ -75,7 +72,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			wifi.setWifiEnabled(true);
 		}
 
-		adapter = new SimpleAdapter(this, arraylist, R.layout.network_list_row,
+		adapter = new SimpleAdapter(this, arraylist, R.layout.list_item_network,
 				new String[] { ITEM_DESCRIPTION }, new int[] { R.id.network_name });
 		lv.setAdapter(adapter);
 		lv.setOnItemClickListener(this);
@@ -123,6 +120,12 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	}
 	
 	@Override
+	protected void onStart() {
+		super.onStart();
+		scan();
+	}
+	
+	@Override
 	protected void onDestroy()
 	{
 	    super.onDestroy();
@@ -151,7 +154,5 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		adhoc.connectToNetwork(result, this);
 		
 	}
-	
-	
 	
 }
