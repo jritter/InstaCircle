@@ -42,7 +42,7 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 		if (view == btnSend) {
 			EditText et = (EditText)getActivity().findViewById(R.id.message_text);
 			Toast.makeText(getActivity(), et.getText().toString(), Toast.LENGTH_SHORT).show();
-			Message message = new Message(et.getText().toString(), 1, 1);
+			Message message = new Message(et.getText().toString(), 1, Message.MSG_CONTENT);
 			Intent intent = new Intent("messageSend");
 			intent.putExtra("message", message);
 			LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);

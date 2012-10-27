@@ -8,11 +8,11 @@ public class Message implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public static final int MSG_CONTENT 		= 0;
-	public static final int MSG_MSGJOIN 		= 1;
-	public static final int MSG_MSGLEAVE 		= 2;
-	public static final int MSG_MSGRESENDREQ 	= 3;
-	public static final int MSG_MSGRESENDRES 	= 4;
+	public static final int MSG_CONTENT 		= 1;
+	public static final int MSG_MSGJOIN 		= 2;
+	public static final int MSG_MSGLEAVE 		= 3;
+	public static final int MSG_MSGRESENDREQ 	= 4;
+	public static final int MSG_MSGRESENDRES 	= 5;
 	
 	private String message;
 	private int sequenceNumber;

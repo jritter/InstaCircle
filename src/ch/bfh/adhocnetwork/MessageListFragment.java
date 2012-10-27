@@ -2,6 +2,7 @@ package ch.bfh.adhocnetwork;
 
 import java.util.ArrayList;
 
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
 import ch.bfh.adhocnetwork.dummy.DummyContent;
 import ch.bfh.adhocnetwork.service.NetworkService;
 
@@ -10,9 +11,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -28,9 +31,12 @@ public class MessageListFragment extends ListFragment {
     private int mActivatedPosition = ListView.INVALID_POSITION;
     
     private ArrayList<Message> messages = new ArrayList<Message>();
+    private SimpleCursorAdapter sca;
+    
+    private Cursor cursor;
+    private NetworkDbHelper helper;
 
     public interface Callbacks {
-
         public void onItemSelected(String id);
     }
 
@@ -46,17 +52,25 @@ public class MessageListFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        Message msg = new Message("ajlsdkjfk", 1, 2);
-        
-        messages.add(msg);
-        
-        setListAdapter(new ArrayAdapter<Message>(getActivity(),
-                R.layout.list_item_message,
-                R.id.label,
-                messages));
-        
+//        Message msg = new Message("ajlsdkjfk", 1, 2);
+//        
+//        messages.add(msg);
+//        
+//        setListAdapter(new ArrayAdapter<Message>(getActivity(),
+//                R.layout.list_item_message,
+//                R.id.label,
+//                messages));
+//        
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-				mMessageReceiver, new IntentFilter("messageReceived"));
+				mMessageReceiver, new IntentFilter("messagesChanged"));
+        
+        helper = new NetworkDbHelper(getActivity());
+        cursor = helper.queryMessages();
+        
+        
+        sca = new SimpleCursorAdapter(getActivity(), R.layout.list_item_message, cursor, new String [] { "message" }, new int [] { R.id.label}, 2);
+        
+        setListAdapter(sca);
         
     }
 
@@ -67,6 +81,8 @@ public class MessageListFragment extends ListFragment {
                 .containsKey(STATE_ACTIVATED_POSITION)) {
             setActivatedPosition(savedInstanceState.getInt(STATE_ACTIVATED_POSITION));
         }
+        
+        this.getListView().setTranscriptMode(2);
     }
 
     @Override
@@ -125,18 +141,7 @@ public class MessageListFragment extends ListFragment {
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			// Get extra data included in the Intent
-			Message msg = (Message) intent.getSerializableExtra("message");
-			
-			Log.d(TAG, "Got message: " + msg.getMessage());
-			Toast.makeText(getActivity(), msg.getMessage(), Toast.LENGTH_SHORT).show();
-			
-			messages.add(msg);
-			
-			setListAdapter(new ArrayAdapter<Message>(getActivity(),
-	                R.layout.list_item_message,
-	                R.id.label,
-	                messages));
+			sca.changeCursor(helper.queryMessages());
 		}
 	};
 }

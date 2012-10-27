@@ -10,9 +10,11 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import ch.bfh.adhocnetwork.Message;
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -30,6 +32,9 @@ public class NetworkService extends Service {
 	private static final String TAG = NetworkService.class.getSimpleName();
 	private InetAddress broadcast;
 	private DatagramSocket s;
+	private ArrayList<String> participants = new ArrayList<String>();
+	
+	private NetworkDbHelper dbHelper;
 
 	public NetworkService() {
 	}
@@ -43,31 +48,58 @@ public class NetworkService extends Service {
 	@Override
 	public void onCreate() {
 		new Thread(new UDPBroadcastReceiverThread(this)).start();
-		Log.d(TAG, "onCreate()");
-		Toast.makeText(this, "onCreate()", Toast.LENGTH_SHORT).show();
+		Log.d(TAG, "Service started");
+		Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show();
 
 		LocalBroadcastManager.getInstance(this).registerReceiver(
 				mMessageReceiver, new IntentFilter("messageSend"));
 
 		broadcast = getBroadcastAddress();
+		dbHelper = new NetworkDbHelper(this);
 	}
 
 	public void processMessage(Message msg) {
+		Log.d(TAG, "Message received...");
 		Log.d(TAG, msg.getMessage());
-		Intent intent = new Intent("messageReceived");
+		dbHelper.insertMessage(msg);
+		Intent intent = new Intent("messagesChanged");
 		// You can also include some extra data.
-		intent.putExtra("message", msg);
+//		intent.putExtra("message", msg);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		
+		switch (msg.getMessageType()) {
+
+		case Message.MSG_CONTENT:
+			Log.d(TAG, "Content...");
+			break;
+		case Message.MSG_MSGJOIN:
+			Log.d(TAG, "Join...");
+			dbHelper.insertParticipants(msg.getMessage());
+			break;
+		case Message.MSG_MSGLEAVE:
+			Log.d(TAG, "Leave...");
+			break;
+		case Message.MSG_MSGRESENDREQ:
+			Log.d(TAG, "Resend Request...");
+			break;
+		case Message.MSG_MSGRESENDRES:
+			Log.d(TAG, "Resend Response...");
+			break;
+		default:
+			Log.d(TAG, "Default...");
+			break;
+		}
+
 	}
 
 	private class BroadcastMessageAsyncTask extends
 			AsyncTask<Message, Integer, Integer> {
 		protected Integer doInBackground(Message... msg) {
-			
-			if (broadcast == null){
+
+			if (broadcast == null) {
 				broadcast = getBroadcastAddress();
 			}
-			
+
 			Log.d(TAG, "Broadcasting message");
 
 			try {
@@ -87,7 +119,7 @@ public class NetworkService extends Service {
 			}
 			return 0;
 		}
-		
+
 	}
 
 	// Broadcasting a message
@@ -99,7 +131,7 @@ public class NetworkService extends Service {
 			new BroadcastMessageAsyncTask().execute(msg);
 		}
 	};
-	
+
 	public InetAddress getBroadcastAddress() {
 		InetAddress found_bcast_address = null;
 		System.setProperty("java.net.preferIPv4Stack", "true");
@@ -108,27 +140,29 @@ public class NetworkService extends Service {
 					.getNetworkInterfaces();
 			while (niEnum.hasMoreElements()) {
 				NetworkInterface ni = niEnum.nextElement();
-				
-				if (ni.getDisplayName().contains("p2p-wlan")){
+
+				if (ni.getDisplayName().contains("p2p-wlan")) {
 					for (InterfaceAddress interfaceAddress : ni
 							.getInterfaceAddresses()) {
 
 						found_bcast_address = interfaceAddress.getBroadcast();
-						
+
 						// found_bcast_address =
 						// found_bcast_address.substring(1);
 
 					}
-					if (found_bcast_address != null){
-						Log.d(TAG, "found p2p Broadcast address: " + found_bcast_address.toString());
+					if (found_bcast_address != null) {
+						Log.d(TAG, "found p2p Broadcast address: "
+								+ found_bcast_address.toString());
 						break;
 					}
 				}
-				
+
 			}
-			
-			if (found_bcast_address == null){
-				Log.d(TAG, "no p2p Broadcast addresses found, now trying to find network broadcast adresses");
+
+			if (found_bcast_address == null) {
+				Log.d(TAG,
+						"no p2p Broadcast addresses found, now trying to find network broadcast adresses");
 				niEnum = NetworkInterface.getNetworkInterfaces();
 				while (niEnum.hasMoreElements()) {
 					NetworkInterface ni = niEnum.nextElement();
@@ -136,19 +170,21 @@ public class NetworkService extends Service {
 					if (!ni.isLoopback()) {
 						for (InterfaceAddress interfaceAddress : ni
 								.getInterfaceAddresses()) {
-	
-							found_bcast_address = interfaceAddress.getBroadcast();
-							
+
+							found_bcast_address = interfaceAddress
+									.getBroadcast();
+
 							// found_bcast_address =
 							// found_bcast_address.substring(1);
-	
+
 						}
-						
-						if (found_bcast_address != null){
-							Log.d(TAG, "found Broadcast address: " + found_bcast_address.toString());
+
+						if (found_bcast_address != null) {
+							Log.d(TAG, "found Broadcast address: "
+									+ found_bcast_address.toString());
 							break;
 						}
-						
+
 					}
 				}
 			}
@@ -158,6 +194,10 @@ public class NetworkService extends Service {
 
 		return found_bcast_address;
 	}
+	
 
-
+	public void joinNetwork(String identifier) {
+		Message joinMessage = new Message(identifier, 1, Message.MSG_MSGJOIN);
+		new BroadcastMessageAsyncTask().execute(joinMessage);
+	}
 }

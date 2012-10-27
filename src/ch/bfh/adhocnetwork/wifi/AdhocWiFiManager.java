@@ -24,8 +24,8 @@ public class AdhocWiFiManager {
 		this.wifiManager = wifiManager;
 	}
 	
-	public void connectToNetwork(ScanResult result, Context context){
-		new ConnectWifiTask(result, context).execute();
+	public void connectToNetwork(ScanResult result, String password, Context context){
+		new ConnectWifiTask(result, password, context).execute();
 	}
 	
 	
@@ -37,12 +37,10 @@ public class AdhocWiFiManager {
 		private WifiConfiguration config;
 		private boolean success;
 		
-		public ConnectWifiTask(ScanResult result, Context context) {
+		public ConnectWifiTask(ScanResult result, String password, Context context) {
 			this.context = context;
 			this.result = result;
 			d = new ProgressDialog(context);
-			
-			String psk = "testtest";
 			
 			config = new WifiConfiguration();
 			//config.SSID = result.SSID;
@@ -51,7 +49,7 @@ public class AdhocWiFiManager {
 			config.BSSID = result.BSSID;
 			config.hiddenSSID = false;
 			config.priority = 10000;
-			config.preSharedKey = "\"".concat(psk).concat("\"");
+			config.preSharedKey = "\"".concat(password).concat("\"");
 			config.status = WifiConfiguration.Status.ENABLED;        
 			config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
 			config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
