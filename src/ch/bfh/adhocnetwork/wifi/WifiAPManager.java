@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 
 import ch.bfh.adhocnetwork.MessageFragment;
 import ch.bfh.adhocnetwork.NetworkActiveActivity;
+import ch.bfh.adhocnetwork.service.NetworkService;
 
 /**
  * Handle enabling and disabling of WiFi AP
@@ -308,7 +309,12 @@ public class WifiAPManager {
 			super.onPostExecute(result);
 			d.dismiss();
 			if (mMode){
-				Intent intent = new Intent(context, NetworkActiveActivity.class);
+				
+				Intent intent = new Intent(context, NetworkService.class);
+				intent.putExtra("action", "createnetwork");	        
+		        context.startService(intent);
+				
+				intent = new Intent(context, NetworkActiveActivity.class);
 				context.startActivity(intent);
 			}
 		}

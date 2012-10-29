@@ -38,8 +38,6 @@ public class NetworkActiveActivity extends FragmentActivity implements ActionBar
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        this.startService(new Intent(this, NetworkService.class));
-        
         
         setContentView(R.layout.activity_network_active);
         // Create the adapter that will return a fragment for each of the three primary sections

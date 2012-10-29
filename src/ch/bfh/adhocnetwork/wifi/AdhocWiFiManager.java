@@ -1,22 +1,24 @@
 package ch.bfh.adhocnetwork.wifi;
 
-import ch.bfh.adhocnetwork.MessageFragment;
 import ch.bfh.adhocnetwork.NetworkActiveActivity;
+import ch.bfh.adhocnetwork.service.NetworkService;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.Toast;
 
 public class AdhocWiFiManager {
 	
 	private static final String TAG = AdhocWiFiManager.class.getSimpleName();
+	private static final String PREFS_NAME = "network_preferences";
 	
 	private WifiManager wifiManager;
 	
@@ -32,14 +34,16 @@ public class AdhocWiFiManager {
 	class ConnectWifiTask extends AsyncTask<Void, Void, Void> {
 		
 		private Context context;
-		private ScanResult result;
 		private ProgressDialog d;
 		private WifiConfiguration config;
 		private boolean success;
+		private SupplicantState s;
+		
+		
+		
 		
 		public ConnectWifiTask(ScanResult result, String password, Context context) {
 			this.context = context;
-			this.result = result;
 			d = new ProgressDialog(context);
 			
 			config = new WifiConfiguration();
@@ -71,6 +75,33 @@ public class AdhocWiFiManager {
 			Log.d(TAG, "Netid: " + netid);
 			success = wifiManager.enableNetwork(netid, true);
 			
+			int maxLoops = 10;
+			int i = 0;
+			while (i < maxLoops){
+				s = wifiManager.getConnectionInfo().getSupplicantState();
+				Log.d(TAG, s.name());
+				if (s == SupplicantState.COMPLETED){
+					break;
+				}
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				i++;
+			}
+			
+			
+			SharedPreferences preferences = context.getSharedPreferences(PREFS_NAME, 0);
+			SharedPreferences.Editor editor = preferences.edit();
+			editor.remove("networkUUID");
+			editor.commit();
+			
+			
+			Intent intent = new Intent(context, NetworkService.class);
+			intent.putExtra("action", "joinnetwork");
+			context.startService(intent);
+			
 			return null;
 		}
 		
@@ -88,8 +119,11 @@ public class AdhocWiFiManager {
 			super.onPostExecute(result);
 			d.dismiss();
 			if (success){
-				Toast.makeText(context, "Successfully connected to Network " + config.SSID + ".", Toast.LENGTH_SHORT).show();
+				
+				
+				
 				Intent intent = new Intent(context, NetworkActiveActivity.class);
+				
 				context.startActivity(intent);
 			}
 			else {

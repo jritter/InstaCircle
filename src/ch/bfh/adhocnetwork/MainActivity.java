@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
+import android.app.Application;
 import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -34,10 +37,8 @@ import ch.bfh.adhocnetwork.wifi.AdhocWiFiManager;
 
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener, ConnectNetworkDialogFragment.NoticeDialogListener, TextWatcher{
 
-	
-
-	private static final String PREFS_NAME = "network_preferences";
 	private static final String TAG = MainActivity.class.getSimpleName();
+	private static final String PREFS_NAME = "network_preferences";
 
 	private SimpleAdapter adapter;
 	private AdhocWiFiManager adhoc;
@@ -78,6 +79,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	public void onClick(View v) {
 		if (v == btnCreateNetwork){
 			Intent intent = new Intent(this, CreateNetworkActivity.class);
+			intent.putExtra("action", "joinnetwork");
 			startActivity(intent);
 		}
 
@@ -86,6 +88,10 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		if (isServiceRunning()){
+			startActivity(new Intent(this, NetworkActiveActivity.class));
+		}
 		
 		setContentView(R.layout.activity_main);
 		
@@ -219,5 +225,15 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		arraylist.clear();
 		wifi.startScan();
 	}
+	
+	public boolean isServiceRunning(){
+		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+	        if ("ch.bfh.adhocnetwork.service.NetworkService".equals(service.service.getClassName())) {
+	            return true;
+	        }
+	    }
+	    return false;
+     }
 	
 }

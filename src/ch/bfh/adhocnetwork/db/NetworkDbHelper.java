@@ -32,9 +32,12 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	// Attributes of the participants table
 	private static final String PARTICIPANTS_ID = "_id";
 	private static final String PARTICIPANTS_IDENTIFICATION = "identification";
+	
+	private String networkUUID; 
 
-	public NetworkDbHelper(Context context) {
-		super(context, DATABASE_NAME, null, DATABASE_VERSION);
+	public NetworkDbHelper(Context context, String networkUUID) {
+		super(context, networkUUID + "_" + DATABASE_NAME, null, DATABASE_VERSION);
+		this.networkUUID = networkUUID;
 	}
 
 	@Override

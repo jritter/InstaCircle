@@ -26,11 +26,11 @@ public class MessageListFragment extends ListFragment {
 
 	private static final String TAG = NetworkService.class.getSimpleName();
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
+    private static final String PREFS_NAME = "network_preferences";
 
     private Callbacks mCallbacks = sDummyCallbacks;
     private int mActivatedPosition = ListView.INVALID_POSITION;
     
-    private ArrayList<Message> messages = new ArrayList<Message>();
     private SimpleCursorAdapter sca;
     
     private Cursor cursor;
@@ -63,8 +63,8 @@ public class MessageListFragment extends ListFragment {
 //        
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, new IntentFilter("messagesChanged"));
-        
-        helper = new NetworkDbHelper(getActivity());
+		String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "");
+        helper = new NetworkDbHelper(getActivity(), networkUUID);
         cursor = helper.queryMessages();
         
         

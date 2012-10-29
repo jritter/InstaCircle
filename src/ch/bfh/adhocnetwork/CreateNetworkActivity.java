@@ -1,5 +1,6 @@
 package ch.bfh.adhocnetwork;
 
+import ch.bfh.adhocnetwork.service.NetworkService;
 import ch.bfh.adhocnetwork.wifi.WifiAPManager;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
@@ -55,7 +56,13 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 	            builder.setMessage("The Wifi AP already enabled. Use this connection?");
 	            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 	                public void onClick(DialogInterface dialog, int which) {
-	                	Intent intent = new Intent(CreateNetworkActivity.this, NetworkActiveActivity.class);
+	                	
+	                	Intent intent = new Intent(CreateNetworkActivity.this, NetworkService.class);
+	    				intent.putExtra("action", "createnetwork");	        
+	    		        startService(intent);
+	                	
+	                	intent = new Intent(CreateNetworkActivity.this, NetworkActiveActivity.class);
+	                	intent.putExtra("action", "createnetwork");
 	        			startActivity(intent);
 	                } });
 	            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {

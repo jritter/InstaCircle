@@ -10,8 +10,11 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 import ch.bfh.adhocnetwork.Message;
 import ch.bfh.adhocnetwork.db.NetworkDbHelper;
@@ -21,6 +24,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -30,10 +34,16 @@ import android.widget.Toast;
 public class NetworkService extends Service {
 
 	private static final String TAG = NetworkService.class.getSimpleName();
+	private static final String PREFS_NAME = "network_preferences";
+
 	private InetAddress broadcast;
 	private DatagramSocket s;
-	private ArrayList<String> participants = new ArrayList<String>();
-	
+
+	private Set<String> availableNetworks = Collections
+			.synchronizedSet(new HashSet<String>());
+
+	private String networkUUID;
+
 	private NetworkDbHelper dbHelper;
 
 	public NetworkService() {
@@ -47,6 +57,14 @@ public class NetworkService extends Service {
 
 	@Override
 	public void onCreate() {
+		if (networkUUID != null && dbHelper == null) {
+			dbHelper = new NetworkDbHelper(this, networkUUID);
+		}
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+
 		new Thread(new UDPBroadcastReceiverThread(this)).start();
 		Log.d(TAG, "Service started");
 		Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show();
@@ -55,18 +73,45 @@ public class NetworkService extends Service {
 				mMessageReceiver, new IntentFilter("messageSend"));
 
 		broadcast = getBroadcastAddress();
-		dbHelper = new NetworkDbHelper(this);
+
+		Log.d(TAG, "Intent Extra: " + intent.getStringExtra("action"));
+
+		if (intent.getStringExtra("action").equals("createnetwork")) {
+			createNetwork();
+		} else if (intent.getStringExtra("action").equals("joinnetwork")) {
+			networkUUID = null;
+			new DiscoverNetworkTask().execute();
+			
+			int i = 0;
+			while (i < 10){
+				if (networkUUID != null){
+					break;
+				}
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				i++;
+			}
+		}
+
+		return super.onStartCommand(intent, flags, startId);
 	}
 
 	public void processMessage(Message msg) {
 		Log.d(TAG, "Message received...");
-		Log.d(TAG, msg.getMessage());
-		dbHelper.insertMessage(msg);
+
+		if (dbHelper != null) {
+			dbHelper.insertMessage(msg);
+		}
+
 		Intent intent = new Intent("messagesChanged");
 		// You can also include some extra data.
-//		intent.putExtra("message", msg);
+		// intent.putExtra("message", msg);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-		
+
 		switch (msg.getMessageType()) {
 
 		case Message.MSG_CONTENT:
@@ -84,6 +129,14 @@ public class NetworkService extends Service {
 			break;
 		case Message.MSG_MSGRESENDRES:
 			Log.d(TAG, "Resend Response...");
+			break;
+		case Message.MSG_NETWORKAD:
+			Log.d(TAG, "got network advertisement for " + msg.getMessage() + ", adding to network list...");
+			availableNetworks.add(msg.getMessage());
+			break;
+		case Message.MSG_DISCOVERNETS:
+			Log.d(TAG, "got discovernetwork, advertising...");
+			advertiseNetwork();
 			break;
 		default:
 			Log.d(TAG, "Default...");
@@ -118,6 +171,42 @@ public class NetworkService extends Service {
 				e.printStackTrace();
 			}
 			return 0;
+		}
+
+	}
+
+	private class DiscoverNetworkTask extends
+			AsyncTask<Void, Void, Void> {
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			if (availableNetworks.isEmpty()) {
+				Log.d(TAG, "no networks found");
+			} else {
+				networkUUID = availableNetworks.iterator().next();
+				joinNetwork(networkUUID,
+						getSharedPreferences("network_preferences", 0)
+								.getString("identifier", "N/A"));
+
+				Log.d(TAG, "connected to network " + networkUUID);
+			}
+			
+		}
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			discoverNetworks();
+		}
+
+		protected Void doInBackground(Void... args) {
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
 		}
 
 	}
@@ -194,10 +283,42 @@ public class NetworkService extends Service {
 
 		return found_bcast_address;
 	}
-	
 
-	public void joinNetwork(String identifier) {
-		Message joinMessage = new Message(identifier, 1, Message.MSG_MSGJOIN);
+	private void createNetwork() {
+		networkUUID = UUID.randomUUID().toString();
+		joinNetwork(networkUUID, getSharedPreferences("network_preferences", 0)
+				.getString("identification", "N/A"));
+	}
+
+	private void joinNetwork(String networkUUID, String identifier) {
+		dbHelper = new NetworkDbHelper(this, networkUUID);
+		Message joinMessage = new Message(identifier, 1, Message.MSG_MSGJOIN,
+				networkUUID);
+		SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
+		SharedPreferences.Editor editor = preferences.edit();
+		editor.putString("networkUUID", networkUUID);
+		editor.commit();
 		new BroadcastMessageAsyncTask().execute(joinMessage);
+	}
+
+	private void discoverNetworks() {
+		Message discoverMessage = new Message(getSharedPreferences(
+				"network_preferences", 0).getString("identifier", "N/A"), 1,
+				Message.MSG_DISCOVERNETS);
+		new BroadcastMessageAsyncTask().execute(discoverMessage);
+	}
+
+	private void advertiseNetwork() {
+		Message adMessage = new Message(networkUUID, 1, Message.MSG_NETWORKAD,
+				networkUUID);
+		new BroadcastMessageAsyncTask().execute(adMessage);
+	}
+
+	public String getNetworkUUID() {
+		return networkUUID;
+	}
+
+	public Set<String> getAvilableNetworks() {
+		return availableNetworks;
 	}
 }
