@@ -17,17 +17,16 @@ import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
 import android.widget.ListView;
 
-public class MessageListFragment extends ListFragment {
+public class ParticipantsListFragment extends ListFragment {
 
-	private static final String TAG = MessageListFragment.class.getSimpleName();
+	private static final String TAG = ParticipantsListFragment.class.getSimpleName();
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
     private static final String PREFS_NAME = "network_preferences";
 
     private Callbacks mCallbacks = sDummyCallbacks;
     private int mActivatedPosition = ListView.INVALID_POSITION;
     
-    //private SimpleCursorAdapter sca;
-    private MessageCursorAdapter mca;
+    private SimpleCursorAdapter sca;
     
     private Cursor cursor;
     private NetworkDbHelper helper;
@@ -41,33 +40,23 @@ public class MessageListFragment extends ListFragment {
         }
     };
 
-    public MessageListFragment() {
+    public ParticipantsListFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-//        Message msg = new Message("ajlsdkjfk", 1, 2);
-//        
-//        messages.add(msg);
-//        
-//        setListAdapter(new ArrayAdapter<Message>(getActivity(),
-//                R.layout.list_item_message,
-//                R.id.label,
-//                messages));
-//        
+              
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-				mMessageReceiver, new IntentFilter("messageArrived"));
+				mMessageReceiver, new IntentFilter("participantJoined"));
 		String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "");
         helper = new NetworkDbHelper(getActivity(), networkUUID);
-        cursor = helper.queryMessages();
+        cursor = helper.queryParticipants();
         
-        //sca = new SimpleCursorAdapter(getActivity(), R.layout.list_item_message, cursor, new String [] { "message" }, new int [] { R.id.content}, 2);
         
-        mca = new MessageCursorAdapter(getActivity(), cursor);
+        sca = new SimpleCursorAdapter(getActivity(), R.layout.list_item_participant, cursor, new String [] { "identification" }, new int [] { R.id.label}, 2);
         
-        setListAdapter(mca);
+        setListAdapter(sca);
         
     }
 
@@ -138,12 +127,7 @@ public class MessageListFragment extends ListFragment {
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//sca.changeCursor(helper.queryMessages());
-			mca.changeCursor(helper.queryMessages());
+			sca.changeCursor(helper.queryParticipants());
 		}
 	};
-	
-	
-	
-	
 }

@@ -58,7 +58,8 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 	                public void onClick(DialogInterface dialog, int which) {
 	                	
 	                	Intent intent = new Intent(CreateNetworkActivity.this, NetworkService.class);
-	    				intent.putExtra("action", "createnetwork");	        
+	    				intent.putExtra("action", "createnetwork");
+	    				stopService(intent);
 	    		        startService(intent);
 	                	
 	                	intent = new Intent(CreateNetworkActivity.this, NetworkActiveActivity.class);

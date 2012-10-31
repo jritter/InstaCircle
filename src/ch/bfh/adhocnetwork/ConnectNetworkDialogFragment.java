@@ -17,6 +17,7 @@ import android.widget.EditText;
 public class ConnectNetworkDialogFragment extends DialogFragment {
 	
 	private static final String TAG = ConnectNetworkDialogFragment.class.getSimpleName();
+	private static final String PREFS_NAME = "network_preferences";
 
 	/*
 	 * The activity that creates an instance of this dialog fragment must
@@ -53,7 +54,7 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 		txtIdentification = (EditText) view.findViewById(R.id.identification);
 		txtPassword = (EditText) view.findViewById(R.id.password);
 		
-		txtIdentification.setText(readOwnerName());
+		txtIdentification.setText(getActivity().getSharedPreferences(PREFS_NAME, 0).getString("identification", readOwnerName()));
 
 		// Inflate and set the layout for the dialog
 		// Pass null as the parent view because its going in the dialog layout

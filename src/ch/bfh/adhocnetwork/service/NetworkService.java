@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -35,6 +36,8 @@ public class NetworkService extends Service {
 
 	private static final String TAG = NetworkService.class.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
+	
+	private static final Integer [] messagesToSave = { Message.MSG_CONTENT, Message.MSG_MSGJOIN, Message.MSG_MSGLEAVE };
 
 	private InetAddress broadcast;
 	private DatagramSocket s;
@@ -43,6 +46,8 @@ public class NetworkService extends Service {
 			.synchronizedSet(new HashSet<String>());
 
 	private String networkUUID;
+	
+	private volatile boolean advertisementArrived = false;
 
 	private NetworkDbHelper dbHelper;
 
@@ -61,6 +66,12 @@ public class NetworkService extends Service {
 			dbHelper = new NetworkDbHelper(this, networkUUID);
 		}
 	}
+	
+	@Override
+	public void onDestroy() {
+		dbHelper.close();
+		super.onDestroy();
+	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -70,21 +81,30 @@ public class NetworkService extends Service {
 		Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show();
 
 		LocalBroadcastManager.getInstance(this).registerReceiver(
-				mMessageReceiver, new IntentFilter("messageSend"));
+				messageSendReceiver, new IntentFilter("messageSend"));
 
 		broadcast = getBroadcastAddress();
 
 		Log.d(TAG, "Intent Extra: " + intent.getStringExtra("action"));
 
 		if (intent.getStringExtra("action").equals("createnetwork")) {
+			
+			// I'm the master, creating a new network...
+			
 			createNetwork();
+			
 		} else if (intent.getStringExtra("action").equals("joinnetwork")) {
+			
+			// I want to join to an existing network
 			networkUUID = null;
+			
+			// Discover all available networks
 			new DiscoverNetworkTask().execute();
 			
+			// Wait for a response
 			int i = 0;
 			while (i < 10){
-				if (networkUUID != null){
+				if (advertisementArrived){
 					break;
 				}
 				try {
@@ -95,22 +115,26 @@ public class NetworkService extends Service {
 				}
 				i++;
 			}
+			
+			networkUUID = (String) availableNetworks.toArray()[0];
+			joinNetwork(networkUUID,
+					getSharedPreferences(PREFS_NAME, 0)
+							.getString("identification", "N/A"));
+
+			Log.d(TAG, "connected to network " + networkUUID);
 		}
 
 		return super.onStartCommand(intent, flags, startId);
 	}
 
+	
+
 	public void processMessage(Message msg) {
 		Log.d(TAG, "Message received...");
 
-		if (dbHelper != null) {
-			dbHelper.insertMessage(msg);
-		}
+		
 
-		Intent intent = new Intent("messagesChanged");
-		// You can also include some extra data.
-		// intent.putExtra("message", msg);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		
 
 		switch (msg.getMessageType()) {
 
@@ -120,6 +144,8 @@ public class NetworkService extends Service {
 		case Message.MSG_MSGJOIN:
 			Log.d(TAG, "Join...");
 			dbHelper.insertParticipants(msg.getMessage());
+			Intent intent = new Intent("participantJoined");
+			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			break;
 		case Message.MSG_MSGLEAVE:
 			Log.d(TAG, "Leave...");
@@ -133,6 +159,7 @@ public class NetworkService extends Service {
 		case Message.MSG_NETWORKAD:
 			Log.d(TAG, "got network advertisement for " + msg.getMessage() + ", adding to network list...");
 			availableNetworks.add(msg.getMessage());
+			advertisementArrived = true;
 			break;
 		case Message.MSG_DISCOVERNETS:
 			Log.d(TAG, "got discovernetwork, advertising...");
@@ -142,6 +169,18 @@ public class NetworkService extends Service {
 			Log.d(TAG, "Default...");
 			break;
 		}
+		
+		if ((dbHelper != null) && Arrays.asList(messagesToSave).contains(msg.getMessageType())) {
+			dbHelper.insertMessage(msg);
+		}
+		else {
+
+		}
+		
+		Intent intent = new Intent("messageArrived");
+		intent.putExtra("message", msg);
+		
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
 	}
 
@@ -182,14 +221,7 @@ public class NetworkService extends Service {
 			super.onPostExecute(result);
 			if (availableNetworks.isEmpty()) {
 				Log.d(TAG, "no networks found");
-			} else {
-				networkUUID = availableNetworks.iterator().next();
-				joinNetwork(networkUUID,
-						getSharedPreferences("network_preferences", 0)
-								.getString("identifier", "N/A"));
-
-				Log.d(TAG, "connected to network " + networkUUID);
-			}
+			} 
 			
 		}
 
@@ -211,8 +243,8 @@ public class NetworkService extends Service {
 
 	}
 
-	// Broadcasting a message
-	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+
+	private BroadcastReceiver messageSendReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			// Get extra data included in the Intent

@@ -100,6 +100,7 @@ public class AdhocWiFiManager {
 			
 			Intent intent = new Intent(context, NetworkService.class);
 			intent.putExtra("action", "joinnetwork");
+			context.stopService(intent);
 			context.startService(intent);
 			
 			return null;

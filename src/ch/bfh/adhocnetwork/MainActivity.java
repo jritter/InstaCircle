@@ -7,7 +7,6 @@ import java.util.List;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
-import android.app.Application;
 import android.app.DialogFragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,7 +31,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
-
 import ch.bfh.adhocnetwork.wifi.AdhocWiFiManager;
 
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener, ConnectNetworkDialogFragment.NoticeDialogListener, TextWatcher{

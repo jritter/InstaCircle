@@ -112,10 +112,12 @@ public class NetworkActiveActivity extends FragmentActivity implements ActionBar
         		fragment = new MessageFragment();
         		break;
         	case 1: 
-        		fragment = new DummySectionFragment();
-        		Bundle args = new Bundle();
-        		args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, i + 1);
-                fragment.setArguments(args);
+//        		fragment = new DummySectionFragment();
+//        		Bundle args = new Bundle();
+//        		args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, i + 1);
+//                fragment.setArguments(args);
+                fragment = new ParticipantsFragment();
+        		break;
         	}
             return fragment;
         }

@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
 
 public class NetworkDbHelper extends SQLiteOpenHelper {
@@ -43,12 +44,12 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 
-		db.execSQL("CREATE TABLE " + TABLE_NAME_PARTICIPANTS + " ("
+		db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME_PARTICIPANTS + " ("
 				+ PARTICIPANTS_ID + " INTEGER PRIMARY KEY, "
 				+ PARTICIPANTS_IDENTIFICATION + " TEXT);");
 
 		
-		String sql = "CREATE TABLE " + TABLE_NAME_MESSAGES + " ("
+		String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME_MESSAGES + " ("
 				+ MESSAGES_ID + " INTEGER PRIMARY KEY, "
 				+ MESSAGES_MESSAGE + " TEXT, "
 				+ MESSAGES_MESSAGE_TYPE	+ " INTEGER, " 
@@ -108,14 +109,18 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	}
 
 	public Cursor queryMessages() {
-		SQLiteDatabase db = getWritableDatabase();
-		return db.query(TABLE_NAME_MESSAGES, null, null, null, null, null,
-				MESSAGES_TIMESTAMP + " ASC");
+		SQLiteDatabase db = getReadableDatabase();
+		
+		String query = "SELECT * FROM messages m LEFT OUTER JOIN participants p ON m.sender_id = p._id ORDER BY m.timestamp ASC;";
+		Cursor c = db.rawQuery(query, null);
+		
+		return c;
 	}
 
 	public Cursor queryParticipants() {
-		SQLiteDatabase db = getWritableDatabase();
-		return db.query(TABLE_NAME_PARTICIPANTS, null, null, null, null, null,
+		SQLiteDatabase db = getReadableDatabase();
+		Cursor c =  db.query(TABLE_NAME_PARTICIPANTS, null, null, null, null, null,
 				PARTICIPANTS_IDENTIFICATION + " ASC");
+		return c;
 	}
 }

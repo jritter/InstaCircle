@@ -311,7 +311,8 @@ public class WifiAPManager {
 			if (mMode){
 				
 				Intent intent = new Intent(context, NetworkService.class);
-				intent.putExtra("action", "createnetwork");	        
+				intent.putExtra("action", "createnetwork");
+				context.stopService(intent);
 		        context.startService(intent);
 				
 				intent = new Intent(context, NetworkActiveActivity.class);
