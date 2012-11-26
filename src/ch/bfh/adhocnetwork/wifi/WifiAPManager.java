@@ -1,18 +1,23 @@
 package ch.bfh.adhocnetwork.wifi;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
-import android.sax.StartElementListener;
+import android.util.Base64;
 import android.util.Log;
-
-import java.lang.reflect.Method;
-
-import ch.bfh.adhocnetwork.MessageFragment;
-import ch.bfh.adhocnetwork.NetworkActiveActivity;
 import ch.bfh.adhocnetwork.service.NetworkService;
 
 /**
@@ -23,6 +28,10 @@ import ch.bfh.adhocnetwork.service.NetworkService;
 public class WifiAPManager {
 
 	private static final String TAG = WifiAPManager.class.getName();
+	private static final String PREFS_NAME = "network_preferences";
+	
+	private SharedPreferences preferences;
+	private SharedPreferences.Editor editor;
 
 	private static int constant = 0;
 
@@ -66,6 +75,26 @@ public class WifiAPManager {
 	}
 	
 	public void enableHotspot(WifiManager wifihandler, WifiConfiguration config, Context context) {
+		
+		// Backing up old configuration
+		SerializableWifiConfiguration oldConfiguration = new SerializableWifiConfiguration(getWifiApConfiguration(wifihandler));
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos;
+		try {
+			oos = new ObjectOutputStream(baos);
+			oos.writeObject(oldConfiguration);
+	        oos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String serializedAPConfig = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+        
+		preferences = context.getSharedPreferences(PREFS_NAME, 0);
+		editor = preferences.edit();
+		editor.putString("originalApConfig", serializedAPConfig);
+		editor.commit();
+		
 		this.config = config;
 		
 		if (wifi == null) {
@@ -80,6 +109,21 @@ public class WifiAPManager {
 		
 		if (wifi == null) {
 			wifi = wifihandler;
+		}
+		
+		preferences = context.getSharedPreferences(PREFS_NAME, 0);
+		String serializedAPConfig = preferences.getString("originalApConfig", "");
+		
+		try {
+			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(serializedAPConfig, Base64.DEFAULT)));
+			SerializableWifiConfiguration oldConfiguration = (SerializableWifiConfiguration) ois.readObject();
+			setWifiApConfiguration(oldConfiguration.getWifiConfiguration());
+		} catch (StreamCorruptedException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e){
+			e.printStackTrace();
 		}
 		
 		new SetWifiAPTask(false, context).execute();
@@ -257,7 +301,7 @@ public class WifiAPManager {
 	 */
 	class SetWifiAPTask extends AsyncTask<Void, Void, Void> {
 		
-		private boolean mMode; // enable or disable wifi AP
+		private boolean mode; // enable or disable wifi AP
 		private ProgressDialog d;
 		private Context context;
 		
@@ -275,8 +319,10 @@ public class WifiAPManager {
 		 */
 		public SetWifiAPTask(boolean mode, Context context) {
 			this.context = context;
-			mMode = mode;
-			d = new ProgressDialog(context);
+			this.mode = mode;
+			if (mode){
+				d = new ProgressDialog(context);
+			}
 		}
 
 		/**
@@ -287,9 +333,11 @@ public class WifiAPManager {
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
-			d.setTitle("Turning WiFi AP " + (mMode ? "on" : "off") + "...");
-			d.setMessage("...please wait a moment.");
-			d.show();
+			if (mode){
+				d.setTitle("Turning WiFi AP " + (mode ? "on" : "off") + "...");
+				d.setMessage("...please wait a moment.");
+				d.show();
+			}
 		}
 
 		/**
@@ -300,26 +348,55 @@ public class WifiAPManager {
 		 */
 		@Override
 		protected Void doInBackground(Void... params) {
-			setWifiApEnabled(mMode);
+			setWifiApEnabled(mode);
 			return null;
 		}
 		
 		@Override
 		protected void onPostExecute(Void result) {
 			super.onPostExecute(result);
-			d.dismiss();
-			if (mMode){
-				
+			if (mode){
+				d.dismiss();
 				Intent intent = new Intent(context, NetworkService.class);
 				intent.putExtra("action", "createnetwork");
 				context.stopService(intent);
 		        context.startService(intent);
-				
-				intent = new Intent(context, NetworkActiveActivity.class);
-				context.startActivity(intent);
 			}
 		}
-		
-		
 	}
+	
+	public WifiConfiguration getWifiApConfiguration(WifiManager wifi) {
+		try {
+			Method method1 = wifi.getClass().getMethod("getWifiApConfiguration");
+			WifiConfiguration config = (WifiConfiguration)method1.invoke(wifi);
+			return config;
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public boolean setWifiApConfiguration(WifiConfiguration config) {
+		try {
+			Method method1 = wifi.getClass().getMethod("setWifiApConfiguration", WifiConfiguration.class);
+			return (Boolean) method1.invoke(wifi, config); 
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	
 }

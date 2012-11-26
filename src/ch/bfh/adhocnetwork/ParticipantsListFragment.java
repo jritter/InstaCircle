@@ -1,9 +1,6 @@
 package ch.bfh.adhocnetwork;
 
 
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
-import ch.bfh.adhocnetwork.dummy.DummyContent;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -16,6 +13,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
 import android.widget.ListView;
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.adhocnetwork.dummy.DummyContent;
 
 public class ParticipantsListFragment extends ListFragment {
 
@@ -50,7 +49,7 @@ public class ParticipantsListFragment extends ListFragment {
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, new IntentFilter("participantJoined"));
 		String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "");
-        helper = new NetworkDbHelper(getActivity(), networkUUID);
+        helper = new NetworkDbHelper(getActivity());
         cursor = helper.queryParticipants();
         
         

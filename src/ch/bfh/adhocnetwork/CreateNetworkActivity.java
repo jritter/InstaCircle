@@ -1,24 +1,22 @@
 package ch.bfh.adhocnetwork;
 
-import ch.bfh.adhocnetwork.service.NetworkService;
-import ch.bfh.adhocnetwork.wifi.WifiAPManager;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiManager;
-import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
+import android.os.Bundle;
 import android.support.v4.app.NavUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
+import ch.bfh.adhocnetwork.service.NetworkService;
+import ch.bfh.adhocnetwork.wifi.WifiAPManager;
 
 public class CreateNetworkActivity extends Activity implements OnClickListener {
 	
@@ -48,30 +46,36 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
         wifiapman = new WifiAPManager();
 		wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		
-		
+		WifiConfiguration config = wifiapman.getWifiApConfiguration(wifiman);
+		txtNetworkName.setText(config.SSID);
+		txtNetworkPIN.setText(config.preSharedKey);
 		
 		if (wifiapman.isWifiAPEnabled(wifiman)){
-			 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-	            builder.setTitle("WiFi AP");
-	            builder.setMessage("The Wifi AP already enabled. Use this connection?");
-	            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-	                public void onClick(DialogInterface dialog, int which) {
-	                	
-	                	Intent intent = new Intent(CreateNetworkActivity.this, NetworkService.class);
-	    				intent.putExtra("action", "createnetwork");
-	    				stopService(intent);
-	    		        startService(intent);
-	                	
-	                	intent = new Intent(CreateNetworkActivity.this, NetworkActiveActivity.class);
-	                	intent.putExtra("action", "createnetwork");
-	        			startActivity(intent);
-	                } });
-	            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-	                public void onClick(DialogInterface dialog, int which) {
-	                	return;
-	                } });
-	            AlertDialog dialog = builder.create();
-	            dialog.show();
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("WiFi AP");
+			builder.setMessage("The Wifi AP already enabled. Use this connection?");
+			builder.setPositiveButton("Yes",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+
+							Intent intent = new Intent(
+									CreateNetworkActivity.this,
+									NetworkService.class);
+							intent.putExtra("action", "createnetwork");
+							stopService(intent);
+							startService(intent);
+
+							CreateNetworkActivity.this.finish();
+						}
+					});
+			builder.setNegativeButton("No",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							return;
+						}
+					});
+			AlertDialog dialog = builder.create();
+			dialog.show();
 		}
     }
 
@@ -104,7 +108,9 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 			wificonfig.SSID = txtNetworkName.getText().toString();
 			wificonfig.preSharedKey = txtNetworkPIN.getText().toString();
 			wificonfig.hiddenSSID = false;
-			wificonfig.status = WifiConfiguration.Status.ENABLED;        
+			wificonfig.status = WifiConfiguration.Status.ENABLED;   
+			//wificonfig.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+			//wificonfig.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.SHARED);
 			wificonfig.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
 			wificonfig.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
 			wificonfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
@@ -113,9 +119,6 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 			wificonfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
 			
 	    	wifiapman.enableHotspot(wifiman, wificonfig, this);
-	    	
 		}
-		
 	}
-
 }

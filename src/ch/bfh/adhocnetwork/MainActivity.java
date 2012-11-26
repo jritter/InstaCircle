@@ -1,5 +1,9 @@
 package ch.bfh.adhocnetwork;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,8 +24,11 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -30,7 +37,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.Toast;
+import ch.bfh.adhocnetwork.wifi.AdhocNetworkConfiguration;
 import ch.bfh.adhocnetwork.wifi.AdhocWiFiManager;
 
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener, ConnectNetworkDialogFragment.NoticeDialogListener, TextWatcher{
@@ -80,7 +87,6 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			intent.putExtra("action", "joinnetwork");
 			startActivity(intent);
 		}
-
 	}
 	
 	@Override
@@ -112,12 +118,12 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		adhoc = new AdhocWiFiManager(wifi);
 		
 		
-		if (wifi.isWifiEnabled() == false) {
-			Toast.makeText(getApplicationContext(),
-					"WiFi is disabled. Enabling it...", Toast.LENGTH_LONG)
-					.show();
-			wifi.setWifiEnabled(true);
-		}
+//		if (wifi.isWifiEnabled() == false) {
+//			Toast.makeText(getApplicationContext(),
+//					"WiFi is disabled. Enabling it...", Toast.LENGTH_LONG)
+//					.show();
+//			wifi.setWifiEnabled(true);
+//		}
 
 		adapter = new SimpleAdapter(this, arraylist, R.layout.list_item_network,
 				new String[] { ITEM_DESCRIPTION }, new int[] { R.id.network_name });
@@ -126,13 +132,12 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 
 		
 		wifibroadcastreceiver = new BroadcastReceiver() {
-
+			
 			@Override
 			public void onReceive(Context c, Intent intent) {
 				results = wifi.getScanResults();
 				size = results.size();
 				
-				Toast.makeText(MainActivity.this, "Scanning....", Toast.LENGTH_SHORT).show();
 				try {
 					size = size - 1;
 					while (size >= 0) {
@@ -155,15 +160,56 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 			}
 		};
 		
-		
 		registerReceiver(wifibroadcastreceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.activity_main, menu);
-		return true;
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_action_items, menu);
+        return true;
+    }
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		switch (item.getItemId()) {
+		case R.id.capture_qrcode:
+			wifi.startScan();
+			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+	        intent.setPackage("com.google.zxing.client.android");
+	        intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+	        startActivityForResult(intent, 0);
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}		
+	}
+	
+	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+	    if (requestCode == 0) {
+	        if (resultCode == RESULT_OK) {
+	            String serializedAPConfig = intent.getStringExtra("SCAN_RESULT");
+	    		
+	    		try {
+	    			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(serializedAPConfig, Base64.DEFAULT)));
+	    			AdhocNetworkConfiguration networkConfig = (AdhocNetworkConfiguration) ois.readObject();
+	    			Log.d(TAG, networkConfig.toString());
+	    			AdhocWiFiManager adhoc = new AdhocWiFiManager(wifi);
+	    			adhoc.connectToNetwork(networkConfig.getSsid(), networkConfig.getPassword(), this);
+	    		} catch (StreamCorruptedException e) {
+	    			e.printStackTrace();
+	    		} catch (IOException e) {
+	    			e.printStackTrace();
+	    		} catch (ClassNotFoundException e){
+	    			e.printStackTrace();
+	    		}
+	            // Handle successful scan
+	        } else if (resultCode == RESULT_CANCELED) {
+	            // Handle cancel
+	        }
+	    }
 	}
 
 	@Override
@@ -233,5 +279,4 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	    }
 	    return false;
      }
-	
 }

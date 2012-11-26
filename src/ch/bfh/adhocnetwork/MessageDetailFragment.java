@@ -1,15 +1,12 @@
 package ch.bfh.adhocnetwork;
 
-import ch.bfh.adhocnetwork.R;
-import ch.bfh.adhocnetwork.dummy.DummyContent;
-
-
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import ch.bfh.adhocnetwork.dummy.DummyContent;
 
 public class MessageDetailFragment extends Fragment {
 

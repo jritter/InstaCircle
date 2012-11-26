@@ -21,5 +21,7 @@
 	<string name="cancel">Cancel</string>
 	<string name="join">Join</string>
 	<string name="your_identification">YOUR IDENTIFICATION</string>
-	
+	<string name="leave_network">Leave network</string>
+	<string name="display_qrcode">Display QR Code</string>
+	<string name="capture_qrcode">Capture QR Code</string>
 </resources>

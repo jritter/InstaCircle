@@ -1,9 +1,6 @@
 package ch.bfh.adhocnetwork;
 
 
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
-import ch.bfh.adhocnetwork.dummy.DummyContent;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,9 +10,10 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
 import android.widget.ListView;
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.adhocnetwork.dummy.DummyContent;
 
 public class MessageListFragment extends ListFragment {
 
@@ -59,8 +57,7 @@ public class MessageListFragment extends ListFragment {
 //        
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, new IntentFilter("messageArrived"));
-		String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "");
-        helper = new NetworkDbHelper(getActivity(), networkUUID);
+        helper = new NetworkDbHelper(getActivity());
         cursor = helper.queryMessages();
         
         //sca = new SimpleCursorAdapter(getActivity(), R.layout.list_item_message, cursor, new String [] { "message" }, new int [] { R.id.content}, 2);
@@ -138,7 +135,6 @@ public class MessageListFragment extends ListFragment {
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//sca.changeCursor(helper.queryMessages());
 			mca.changeCursor(helper.queryMessages());
 		}
 	};

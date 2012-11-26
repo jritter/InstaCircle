@@ -1,26 +1,48 @@
 package ch.bfh.adhocnetwork;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.FragmentTransaction;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
+import android.util.Base64;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import ch.bfh.adhocnetwork.service.NetworkService;
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.adhocnetwork.wifi.AdhocNetworkConfiguration;
+import ch.bfh.adhocnetwork.wifi.SerializableWifiConfiguration;
+import ch.bfh.adhocnetwork.wifi.WifiAPManager;
 
 public class NetworkActiveActivity extends FragmentActivity implements ActionBar.TabListener {
 
+	
+	private static final String TAG = NetworkActiveActivity.class.getSimpleName();
+	private static final String PREFS_NAME = "network_preferences";
+	
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide fragments for each of the
      * sections. We use a {@link android.support.v4.app.FragmentPagerAdapter} derivative, which will
@@ -33,11 +55,13 @@ public class NetworkActiveActivity extends FragmentActivity implements ActionBar
      * The {@link ViewPager} that will host the section contents.
      */
     ViewPager mViewPager;
+    
+    
+    
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
         
         setContentView(R.layout.activity_network_active);
         // Create the adapter that will return a fragment for each of the three primary sections
@@ -83,7 +107,88 @@ public class NetworkActiveActivity extends FragmentActivity implements ActionBar
 
     
 
-    public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		
+		Intent intent = null;
+		switch (item.getItemId()) {
+		case R.id.display_qrcode:
+			
+			WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+			WifiAPManager wifiapman = new WifiAPManager();
+			WifiConfiguration currentConfig = null;
+			if (wifiapman.isWifiAPEnabled(wifiman)){
+				currentConfig = wifiapman.getWifiApConfiguration(wifiman);
+				Log.d(TAG, "Displaying AP Configuration...");
+			}
+			else {
+				int networkId = wifiman.getConnectionInfo().getNetworkId();
+				for (WifiConfiguration config : wifiman.getConfiguredNetworks()){
+					if (config.networkId == networkId){
+						currentConfig = config;
+						
+						SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
+						currentConfig.preSharedKey = preferences.getString("password", "");
+						break;
+					}
+				}
+				Log.d(TAG, "Displaying Wifi Configuration...");
+			}
+		
+			SerializableWifiConfiguration sConfig = new SerializableWifiConfiguration(currentConfig);
+			AdhocNetworkConfiguration networkConfiguration = new AdhocNetworkConfiguration(currentConfig.SSID, currentConfig.preSharedKey, "testtest");
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	        ObjectOutputStream oos;
+			try {
+				oos = new ObjectOutputStream(baos);
+				oos.writeObject(networkConfiguration);
+		        oos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			String serializedConfig = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+			
+			
+			intent = new Intent("com.google.zxing.client.android.ENCODE");
+			intent.putExtra("ENCODE_TYPE", "TEXT_TYPE");
+			intent.putExtra("ENCODE_DATA", serializedConfig);
+			intent.putExtra("ENCODE_FORMAT", "QR_CODE");
+			intent.putExtra("ENCODE_SHOW_CONTENTS", false);
+			startActivity(intent);
+
+			return true;
+			
+		case R.id.leave_network:
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Leave Network?");
+            builder.setMessage("Do you really want to leave this conversation?");
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                	String identification = getSharedPreferences(PREFS_NAME, 0).getString("identification", "N/A");
+                	String networkUUID = getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "N/A");
+        			Message message = new Message(identification, Message.MSG_MSGLEAVE, identification, new NetworkDbHelper(NetworkActiveActivity.this).getNextSequenceNumber(), networkUUID);
+        			Intent intent = new Intent("messageSend");
+        			intent.putExtra("message", message);
+        			LocalBroadcastManager.getInstance(NetworkActiveActivity.this).sendBroadcast(intent);
+    				NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    				notificationManager.cancelAll();
+        			NetworkActiveActivity.this.finish();
+                } });
+            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                	return;
+                } });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+
+	public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     }
 
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {

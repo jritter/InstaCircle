@@ -1,8 +1,5 @@
 package ch.bfh.adhocnetwork;
 
-import ch.bfh.adhocnetwork.R;
-
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -13,9 +10,12 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
 
 public class MessageSendFragment extends Fragment implements OnClickListener {
+	
+	private static final String PREFS_NAME = "network_preferences";
+	private NetworkDbHelper dbHelper;
 
 	Button btnSend;
 	
@@ -34,6 +34,7 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
         View rootView = inflater.inflate(R.layout.fragment_message_send, container, false);
         btnSend = (Button) rootView.findViewById(R.id.send_button);
         btnSend.setOnClickListener(this);
+        dbHelper = new NetworkDbHelper(getActivity());
         return rootView;
     }
 
@@ -41,8 +42,10 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 		
 		if (view == btnSend) {
 			EditText et = (EditText)getActivity().findViewById(R.id.message_text);
-			Toast.makeText(getActivity(), et.getText().toString(), Toast.LENGTH_SHORT).show();
-			Message message = new Message(et.getText().toString(), 1, Message.MSG_CONTENT);
+			
+			String identification = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("identification", "N/A");
+			String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "N/A");
+			Message message = new Message(et.getText().toString(), Message.MSG_CONTENT, identification, dbHelper.getNextSequenceNumber(), networkUUID);
 			Intent intent = new Intent("messageSend");
 			intent.putExtra("message", message);
 			LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);

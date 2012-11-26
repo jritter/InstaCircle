@@ -9,7 +9,6 @@ import android.database.Cursor;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -62,14 +61,12 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 		// Add action buttons
 		builder.setPositiveButton(R.string.join,
 				new DialogInterface.OnClickListener() {
-
 					public void onClick(DialogInterface dialog, int which) {
 						identification = txtIdentification.getText().toString();
 						password = txtPassword.getText().toString();
 						mListener
 								.onDialogPositiveClick(ConnectNetworkDialogFragment.this);
 					}
-
 				});
 		builder.setNegativeButton(R.string.cancel,
 				new DialogInterface.OnClickListener() {

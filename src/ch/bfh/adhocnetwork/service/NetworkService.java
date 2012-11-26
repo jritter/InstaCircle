@@ -1,15 +1,24 @@
 package ch.bfh.adhocnetwork.service;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.Socket;
 import java.net.SocketException;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -17,20 +26,35 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import ch.bfh.adhocnetwork.Message;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
+import ch.bfh.adhocnetwork.Message;
+import ch.bfh.adhocnetwork.NetworkActiveActivity;
+import ch.bfh.adhocnetwork.R;
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.adhocnetwork.wifi.AdhocWiFiManager;
+import ch.bfh.adhocnetwork.wifi.WifiAPManager;
 
 public class NetworkService extends Service {
 
@@ -40,7 +64,7 @@ public class NetworkService extends Service {
 	private static final Integer [] messagesToSave = { Message.MSG_CONTENT, Message.MSG_MSGJOIN, Message.MSG_MSGLEAVE };
 
 	private InetAddress broadcast;
-	private DatagramSocket s;
+	
 
 	private Set<String> availableNetworks = Collections
 			.synchronizedSet(new HashSet<String>());
@@ -50,8 +74,12 @@ public class NetworkService extends Service {
 	private volatile boolean advertisementArrived = false;
 
 	private NetworkDbHelper dbHelper;
+	
+	private Thread udpBroadcastReceiverThread;
+	private Thread tcpUnicastReceiverThread;
 
 	public NetworkService() {
+		
 	}
 
 	@Override
@@ -62,9 +90,7 @@ public class NetworkService extends Service {
 
 	@Override
 	public void onCreate() {
-		if (networkUUID != null && dbHelper == null) {
-			dbHelper = new NetworkDbHelper(this, networkUUID);
-		}
+
 	}
 	
 	@Override
@@ -74,9 +100,29 @@ public class NetworkService extends Service {
 	}
 
 	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
+	public int onStartCommand(Intent intent, int flags, int startId) {		
+		dbHelper = new NetworkDbHelper(this);
+		PendingIntent pIntent = PendingIntent.getActivity(this, 0, new Intent(this, NetworkActiveActivity.class), 0);
+		
+		Notification.Builder notificationBuilder = new Notification.Builder(this);
+		notificationBuilder.setContentTitle("Adhoc Network Chat");
+		notificationBuilder.setContentText("An Adhoc Network Chat session is running. Tap to bring in front.");
+		notificationBuilder.setSmallIcon(R.drawable.glyphicons_244_conversation);
+		notificationBuilder.setContentIntent(pIntent);
+		notificationBuilder.setOngoing(true);
+		Notification notification = notificationBuilder.getNotification();
+		
+		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		
+		notificationManager.notify(TAG, 1, notification);
 
-		new Thread(new UDPBroadcastReceiverThread(this)).start();
+		udpBroadcastReceiverThread = new Thread(new UDPBroadcastReceiverThread(this));
+		udpBroadcastReceiverThread.start();
+		
+		tcpUnicastReceiverThread = new Thread(new TCPUnicastReceiverThread(this));
+		tcpUnicastReceiverThread.start();
+		
+		
 		Log.d(TAG, "Service started");
 		Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show();
 
@@ -85,15 +131,12 @@ public class NetworkService extends Service {
 
 		broadcast = getBroadcastAddress();
 
-		Log.d(TAG, "Intent Extra: " + intent.getStringExtra("action"));
-
 		if (intent.getStringExtra("action").equals("createnetwork")) {
-			
-			// I'm the master, creating a new network...
-			
+				
 			createNetwork();
 			
 		} else if (intent.getStringExtra("action").equals("joinnetwork")) {
+			
 			
 			// I want to join to an existing network
 			networkUUID = null;
@@ -110,31 +153,35 @@ public class NetworkService extends Service {
 				try {
 					Thread.sleep(2000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				i++;
 			}
 			
 			networkUUID = (String) availableNetworks.toArray()[0];
+			dbHelper.openConversation("testtest", networkUUID);
 			joinNetwork(networkUUID,
 					getSharedPreferences(PREFS_NAME, 0)
 							.getString("identification", "N/A"));
-
+			
 			Log.d(TAG, "connected to network " + networkUUID);
 		}
-
+		
+		intent = new Intent(this, NetworkActiveActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		startActivity(intent);
 		return super.onStartCommand(intent, flags, startId);
 	}
 
 	
 
-	public void processMessage(Message msg) {
-		Log.d(TAG, "Message received...");
-
+	public void processBroadcastMessage(Message msg) {
+		Log.d(TAG, "Broadcast Message received...");
 		
-
-		
+		if (!checkMessageConsistency()){
+			return;
+		}
 
 		switch (msg.getMessageType()) {
 
@@ -143,7 +190,7 @@ public class NetworkService extends Service {
 			break;
 		case Message.MSG_MSGJOIN:
 			Log.d(TAG, "Join...");
-			dbHelper.insertParticipants(msg.getMessage());
+			dbHelper.insertParticipant(msg.getMessage());
 			Intent intent = new Intent("participantJoined");
 			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			break;
@@ -170,22 +217,144 @@ public class NetworkService extends Service {
 			break;
 		}
 		
-		if ((dbHelper != null) && Arrays.asList(messagesToSave).contains(msg.getMessageType())) {
-			dbHelper.insertMessage(msg);
-		}
-		else {
-
+		if (Arrays.asList(messagesToSave).contains(msg.getMessageType())){
+			
+			// Check whether participant already exists in the database
+			
+			if (!dbHelper.isParticipantKnown(msg.getSender())){
+				// Write participant into database if it does not exist
+				dbHelper.insertParticipant(msg.getSender());
+			}
+			
+			Log.d(TAG, "Got message with sequence number " + msg.getSequenceNumber());
+			Log.d(TAG, "Expecting sequence Number " + (dbHelper.getCurrentParticipantSequenceNumber(msg.getSender()) + 1));
+			
+			if (msg.getSequenceNumber() != -1 && msg.getSequenceNumber() > dbHelper.getCurrentParticipantSequenceNumber(msg.getSender()) + 1){
+				// Request missing messages
+				Log.d(TAG, "Messagelist from " + msg.getSender() + " incomplete, requesting messages...");
+				Message resendRequestMessage = new Message("", Message.MSG_MSGRESENDREQ, getSharedPreferences(PREFS_NAME, 0)
+						.getString("identification", "N/A"), -1, networkUUID);
+				new UnicastMessageAsyncTask(msg.getSenderIPAddress()).execute(resendRequestMessage);
+			}
+			else {
+				if (dbHelper != null) {
+					dbHelper.insertMessage(msg);
+				}
+			}
 		}
 		
 		Intent intent = new Intent("messageArrived");
 		intent.putExtra("message", msg);
 		
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		
+		String identification = getSharedPreferences(PREFS_NAME, 0).getString("identification", "N/A");
+		
+		
+		// Stop everything as soon as the own leave message has been processed
+		if (msg.getMessageType() == Message.MSG_MSGLEAVE && msg.getSender().equals(identification)){
+			udpBroadcastReceiverThread.interrupt();
+			dbHelper.closeConversation();
+			WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+			new AdhocWiFiManager(wifiman).restoreWifiConfiguration(getBaseContext());
+			new WifiAPManager().disableHotspot(wifiman, getBaseContext());
+			stopSelf();
+		}
 
 	}
+	
+	
+	public void processUnicastMessage (Message msg){
+		Log.d(TAG, "Broadcast Message received...");
+		
+		if (!checkMessageConsistency()){
+			return;
+		}
+
+		switch (msg.getMessageType()) {
+
+		case Message.MSG_CONTENT:
+			Log.d(TAG, "Content...");
+			break;
+		
+		case Message.MSG_MSGRESENDREQ:
+			Log.d(TAG, "Got resendrequest from " + msg.getSender());
+			Cursor myMessages = dbHelper.queryMyMessages();
+			ArrayList<Message> messages = new ArrayList<Message>();
+			// iterate over cursor
+			for (boolean hasItem = myMessages.moveToFirst(); hasItem; hasItem = myMessages.moveToNext()) {
+				
+				// Assemble new messages from database
+				messages.add(new Message(myMessages
+						.getString(myMessages.getColumnIndex("message")),
+						myMessages.getInt(myMessages
+								.getColumnIndex("message_type")), myMessages
+								.getString(myMessages
+										.getColumnIndex("identification")),
+						myMessages.getInt(myMessages
+								.getColumnIndex("sequence_number")),
+						networkUUID));
+			}
+			
+			// serializing the list to a Base64 String
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	        ObjectOutputStream oos;
+			try {
+				oos = new ObjectOutputStream(baos);
+				oos.writeObject(messages);
+		        oos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			String serializedMessages = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
+			
+			String identification = getSharedPreferences("network_preferences", 0).getString("identification", "N/A");
+			
+			Message resendMessage = new Message(serializedMessages, Message.MSG_MSGRESENDRES, identification, -1, networkUUID);
+			
+			new UnicastMessageAsyncTask(msg.getSenderIPAddress()).execute(resendMessage);
+			break;
+			
+		case Message.MSG_MSGRESENDRES:
+			Log.d(TAG, "Got all messages from " + msg.getSender());
+			
+			try {
+    			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(msg.getMessage(), Base64.DEFAULT)));
+    			ArrayList<Message> deserializedMessages =  (ArrayList<Message>) ois.readObject();
+    			for (Message message : deserializedMessages){
+    				Log.d(TAG, "Reprocessing message...");
+    				processBroadcastMessage(message);
+    			}
+    		} catch (StreamCorruptedException e) {
+    			e.printStackTrace();
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    		} catch (ClassNotFoundException e){
+    			e.printStackTrace();
+    		}
+			
+			break;
+			
+			
+			
+		}
+		
+		if (Arrays.asList(messagesToSave).contains(msg.getMessageType())){
+			msg.setSequenceNumber(-1);
+			dbHelper.insertMessage(msg);
+		}
+	}
+	
+	private boolean checkMessageConsistency() {
+		return true;
+	}
+
 
 	private class BroadcastMessageAsyncTask extends
 			AsyncTask<Message, Integer, Integer> {
+		
+		private DatagramSocket s;
+		
 		protected Integer doInBackground(Message... msg) {
 
 			if (broadcast == null) {
@@ -199,19 +368,61 @@ public class NetworkService extends Service {
 				ObjectOutput out = new ObjectOutputStream(bos);
 				out.writeObject(msg[0]);
 				byte[] bytes = bos.toByteArray();
+				byte[] encryptedBytes = encrypt("1234".getBytes(), bytes);
 				s = new DatagramSocket();
 				s.setBroadcast(true);
 				s.setReuseAddress(true);
-				DatagramPacket p = new DatagramPacket(bytes, bytes.length,
+				DatagramPacket p = new DatagramPacket(encryptedBytes, encryptedBytes.length,
 						broadcast, 12345);
 				s.send(p);
 				s.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
 			return 0;
 		}
+	}
+	
+	private class UnicastMessageAsyncTask extends
+			AsyncTask<Message, Integer, Integer> {
+		
+		private String destinationAddr;
+		private Socket s;
+		
+		public UnicastMessageAsyncTask(String destinationAddr){
+			this.destinationAddr = destinationAddr;
+		}
+		
+		protected Integer doInBackground(Message... msg) {
 
+			if (broadcast == null) {
+				broadcast = getBroadcastAddress();
+			}
+
+			Log.d(TAG, "Sending message to " + destinationAddr);
+
+			try {
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+				ObjectOutput out = new ObjectOutputStream(bos);
+				out.writeObject(msg[0]);
+				byte[] bytes = bos.toByteArray();
+				byte[] encryptedBytes = encrypt("1234".getBytes(), bytes);
+				s = new Socket(destinationAddr, 12345);
+				out.close();
+				
+				
+				DataOutputStream dOut = new DataOutputStream(s.getOutputStream());
+				dOut.write(encryptedBytes);
+				dOut.flush();
+				dOut.close();
+				s.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			return 0;
+		}
 	}
 
 	private class DiscoverNetworkTask extends
@@ -235,7 +446,6 @@ public class NetworkService extends Service {
 			try {
 				Thread.sleep(3000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return null;
@@ -318,14 +528,15 @@ public class NetworkService extends Service {
 
 	private void createNetwork() {
 		networkUUID = UUID.randomUUID().toString();
+		dbHelper.openConversation("testtest", networkUUID);
 		joinNetwork(networkUUID, getSharedPreferences("network_preferences", 0)
 				.getString("identification", "N/A"));
 	}
 
 	private void joinNetwork(String networkUUID, String identifier) {
-		dbHelper = new NetworkDbHelper(this, networkUUID);
-		Message joinMessage = new Message(identifier, 1, Message.MSG_MSGJOIN,
-				networkUUID);
+		Message joinMessage = new Message(identifier, Message.MSG_MSGJOIN,
+				getSharedPreferences(PREFS_NAME, 0)
+				.getString("identification", "N/A"), dbHelper.getNextSequenceNumber(), networkUUID);
 		SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString("networkUUID", networkUUID);
@@ -335,14 +546,16 @@ public class NetworkService extends Service {
 
 	private void discoverNetworks() {
 		Message discoverMessage = new Message(getSharedPreferences(
-				"network_preferences", 0).getString("identifier", "N/A"), 1,
-				Message.MSG_DISCOVERNETS);
+				"network_preferences", 0).getString("identifier", "N/A"),
+				Message.MSG_DISCOVERNETS, getSharedPreferences(
+						"network_preferences", 0).getString("identifier", "N/A"));
 		new BroadcastMessageAsyncTask().execute(discoverMessage);
 	}
 
 	private void advertiseNetwork() {
-		Message adMessage = new Message(networkUUID, 1, Message.MSG_NETWORKAD,
-				networkUUID);
+		Message adMessage = new Message(networkUUID, Message.MSG_NETWORKAD,
+				getSharedPreferences(PREFS_NAME, 0)
+				.getString("identification", "N/A"), -1, networkUUID);
 		new BroadcastMessageAsyncTask().execute(adMessage);
 	}
 
@@ -352,5 +565,39 @@ public class NetworkService extends Service {
 
 	public Set<String> getAvilableNetworks() {
 		return availableNetworks;
+	}
+	
+	private byte[] encrypt(byte[] rawSeed, byte[] clear) {
+		Cipher cipher;
+		MessageDigest digest;
+		byte[] clearBlock = new byte[1024];
+		System.arraycopy(clear, 0, clearBlock, 0, clear.length);
+		byte[] encrypted = null;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+			digest.reset();
+			SecretKeySpec skeySpec = new SecretKeySpec(digest.digest(rawSeed), "AES");
+			cipher = Cipher.getInstance("AES");
+			cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
+			encrypted = cipher.doFinal(clearBlock);
+			Log.d(TAG, "sent Length: " + encrypted.length);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return encrypted;
 	}
 }

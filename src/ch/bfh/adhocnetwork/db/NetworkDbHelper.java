@@ -1,126 +1,317 @@
 package ch.bfh.adhocnetwork.db;
 
-import ch.bfh.adhocnetwork.Message;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.Log;
+import ch.bfh.adhocnetwork.Message;
 
 public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	private static final String TAG = NetworkDbHelper.class.getSimpleName();
+	private static final String PREFS_NAME = "network_preferences";
 
 	// Basic DB parameters
 	private static final String DATABASE_NAME = "network.db";
-	private static final int DATABASE_VERSION = 1;
+	private static final int DATABASE_VERSION = 5;
 
 	// Table names
-	private static final String TABLE_NAME_MESSAGES = "messages";
-	private static final String TABLE_NAME_PARTICIPANTS = "participants";
+	private static final String TABLE_NAME_MESSAGE = "message";
+	private static final String TABLE_NAME_PARTICIPANT = "participant";
+	private static final String TABLE_NAME_CONVERSATION = "conversation";
 
 	// Attributes of the messages table
-	private static final String MESSAGES_ID = "_id";
-	private static final String MESSAGES_MESSAGE = "message";
-	private static final String MESSAGES_MESSAGE_TYPE = "message_type";
-	private static final String MESSAGES_SENDER_ID = "sender_id";
+	private static final String MESSAGE_ID = "_id";
+	private static final String MESSAGE_MESSAGE = "message";
+	private static final String MESSAGE_MESSAGE_TYPE = "message_type";
+	private static final String MESSAGE_SENDER_ID = "sender_id";
 	private static final String MESSAGES_SEQUENCE_NUMBER = "sequence_number";
+	private static final String MESSAGES_SOURCE_IP_ADDRESS = "source_ip_address";
 	private static final String MESSAGES_TIMESTAMP = "timestamp";
 
 	// Attributes of the participants table
-	private static final String PARTICIPANTS_ID = "_id";
-	private static final String PARTICIPANTS_IDENTIFICATION = "identification";
+	private static final String PARTICIPANT_ID = "_id";
+	private static final String PARTICIPANT_CONVERSATION_ID = "conversation_id";
+	private static final String PARTICIPANT_IDENTIFICATION = "identification";
 	
-	private String networkUUID; 
+	// Attributes of the conversations table
+	private static final String CONVERSATION_ID = "_id";
+	private static final String CONVERSATION_KEY = "conversation_key";
+	private static final String CONVERSATION_UUID = "conversation_uuid";
+	private static final String CONVERSATION_START = "conversation_start";
+	private static final String CONVERSATION_END = "conversation_end";
+	private static final String CONVERSATION_OPEN = "conversation_open";
+	
+	private Context context;
+	private String identification;
+	
 
-	public NetworkDbHelper(Context context, String networkUUID) {
-		super(context, networkUUID + "_" + DATABASE_NAME, null, DATABASE_VERSION);
-		this.networkUUID = networkUUID;
+	public NetworkDbHelper(Context context) {
+		super(context, DATABASE_NAME, null, DATABASE_VERSION);
+		this.context = context;
+		identification = context.getSharedPreferences(PREFS_NAME, 0).getString("identification", "N/A");
 	}
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
+		
+		
+		String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME_CONVERSATION + " ("
+				+ CONVERSATION_ID + " INTEGER PRIMARY KEY, "
+				+ CONVERSATION_KEY + " TEXT, "
+				+ CONVERSATION_UUID + " TEXT, "
+				+ CONVERSATION_START + " INTEGER, "
+				+ CONVERSATION_END + " INTEGER, "
+				+ CONVERSATION_OPEN + " INTEGER);";
 
-		db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME_PARTICIPANTS + " ("
-				+ PARTICIPANTS_ID + " INTEGER PRIMARY KEY, "
-				+ PARTICIPANTS_IDENTIFICATION + " TEXT);");
-
-		
-		String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME_MESSAGES + " ("
-				+ MESSAGES_ID + " INTEGER PRIMARY KEY, "
-				+ MESSAGES_MESSAGE + " TEXT, "
-				+ MESSAGES_MESSAGE_TYPE	+ " INTEGER, " 
-				+ MESSAGES_SENDER_ID + " INTEGER, "
-				+ MESSAGES_SEQUENCE_NUMBER	+ " INTEGER, "
-				+ MESSAGES_TIMESTAMP + " INTEGER, FOREIGN KEY(" + MESSAGES_SENDER_ID
-				+ ") REFERENCES " + TABLE_NAME_PARTICIPANTS + "("
-				+ PARTICIPANTS_ID + "));";
-		
-		
-		Log.d(TAG, sql);
 		db.execSQL(sql);
 		
+		sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME_PARTICIPANT + " ("
+				+ PARTICIPANT_ID + " INTEGER PRIMARY KEY, "
+				+ PARTICIPANT_CONVERSATION_ID + " INTEGER, "
+				+ PARTICIPANT_IDENTIFICATION + " TEXT, "
+				+ "FOREIGN KEY(" + PARTICIPANT_CONVERSATION_ID + ") REFERENCES " + TABLE_NAME_CONVERSATION + "(" + CONVERSATION_ID + "));";
+		
+		db.execSQL(sql);
+		
+		
+		
+		sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME_MESSAGE + " ("
+				+ MESSAGE_ID + " INTEGER PRIMARY KEY, "
+				+ MESSAGE_MESSAGE + " TEXT, "
+				+ MESSAGE_MESSAGE_TYPE	+ " INTEGER, " 
+				+ MESSAGE_SENDER_ID + " INTEGER, "
+				+ MESSAGES_SEQUENCE_NUMBER	+ " INTEGER, "
+				+ MESSAGES_SOURCE_IP_ADDRESS + " TEXT, "
+				+ MESSAGES_TIMESTAMP + " INTEGER, "
+				+ "FOREIGN KEY(" + MESSAGE_SENDER_ID + ") REFERENCES " + TABLE_NAME_PARTICIPANT + "("	+ PARTICIPANT_ID + "));";
+		
+		db.execSQL(sql);
 	}
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		Log.w(TAG, "DB Upgrade from Version " + oldVersion + " to version "
 				+ newVersion);
-		db.execSQL("DROP TABLE IF EXISTS ?",
-				new String[] { TABLE_NAME_PARTICIPANTS });
-		db.execSQL("DROP TABLE IF EXISTS ?",
-				new String[] { TABLE_NAME_MESSAGES });
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_CONVERSATION);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_PARTICIPANT);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_MESSAGE);
 		onCreate(db);
 	}
 
 	public void insertMessage(Message message) {
 		long rowId = -1;
+		Log.d(TAG, "Inserting Message: " + message.toString());
 		try {
 			SQLiteDatabase db = getWritableDatabase();
 			ContentValues values = new ContentValues();
-			values.put(MESSAGES_MESSAGE, message.getMessage());
-			values.put(MESSAGES_MESSAGE_TYPE, message.getMessageType());
-			values.put(MESSAGES_SENDER_ID, 1);
+			values.put(MESSAGE_MESSAGE, message.getMessage());
+			values.put(MESSAGE_MESSAGE_TYPE, message.getMessageType());
+			values.put(MESSAGE_SENDER_ID, getParticipantID(message.getSender()));
 			values.put(MESSAGES_SEQUENCE_NUMBER, message.getSequenceNumber());
+			values.put(MESSAGES_SOURCE_IP_ADDRESS, message.getSenderIPAddress());
 			values.put(MESSAGES_TIMESTAMP, System.currentTimeMillis());
-			rowId = db.insert(TABLE_NAME_MESSAGES, null, values);
+			rowId = db.insert(TABLE_NAME_MESSAGE, null, values);
 		} catch (SQLiteException e) {
 			Log.e(TAG, "insert()", e);
 		} finally {
 			Log.d(TAG, "insert(): rowId=" + rowId);
 		}
 	}
+	
+	public long getParticipantID(String participantIdentification, long conversationId){
+		SQLiteDatabase db = getReadableDatabase();
+		String sql= "SELECT * FROM participant p WHERE p.identification = '" + participantIdentification + "' AND p.conversation_id = " + conversationId;
+		Cursor c = db.rawQuery(sql, null);
+		c.moveToFirst();
+		return c.getLong(c.getColumnIndex("_id"));
+	}
+	
+	public long getParticipantID(String participantIdentification){
+		return getParticipantID(participantIdentification, getOpenConversationId());
+	}
 
-	public void insertParticipants(String participantIdentification) {
+	public long insertParticipant(String participantIdentification, long conversationId) {
 		long rowId = -1;
 		try {
 			SQLiteDatabase db = getWritableDatabase();
 			ContentValues values = new ContentValues();
-			values.put(PARTICIPANTS_IDENTIFICATION, participantIdentification);
-			rowId = db.insert(TABLE_NAME_PARTICIPANTS, null, values);
+			values.put(PARTICIPANT_IDENTIFICATION, participantIdentification);
+			values.put(PARTICIPANT_CONVERSATION_ID, conversationId);
+			rowId = db.insert(TABLE_NAME_PARTICIPANT, null, values);
 		} catch (SQLiteException e) {
 			Log.e(TAG, "insert()", e);
 		} finally {
 			Log.d(TAG, "insert(): rowId=" + rowId);
 		}
+		return rowId;
 	}
-
-	public Cursor queryMessages() {
+	
+	public long insertParticipant(String participantIdentification){
+		return insertParticipant(participantIdentification, getOpenConversationId());
+	}
+	
+	public Cursor queryMessages(long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
 		
-		String query = "SELECT * FROM messages m LEFT OUTER JOIN participants p ON m.sender_id = p._id ORDER BY m.timestamp ASC;";
+		//String query = "SELECT * FROM messages m LEFT OUTER JOIN participants p ON m.sender_id = p._id ORDER BY m.timestamp ASC;";
+		String sql = "SELECT * FROM participant p, conversation c, message m WHERE m.sender_id = p._id AND p.conversation_id = c._id AND c._id = " + conversationId;
+		Cursor c = db.rawQuery(sql, null);
+		return c;
+	}
+	
+	public Cursor queryMessages(){
+		return queryMessages(getOpenConversationId());
+	}
+	
+	public Cursor queryMyMessages (long conversationId) {
+		SQLiteDatabase db = getReadableDatabase();
+		String myIdentification = context.getSharedPreferences("network_preferences", 0).getString("identification", "N/A");
+		String sql = "SELECT * FROM participant p, conversation c, message m WHERE m.sender_id = p._id AND p.conversation_id = c._id AND c._id = " + conversationId + " AND p.identification = '" + myIdentification + "';";
+		Cursor c = db.rawQuery(sql, null);
+		return c;
+	}
+	
+	public Cursor queryMyMessages() {
+		return queryMyMessages(getOpenConversationId());
+	}
+
+	public Cursor queryParticipants(long conversationId) {
+		SQLiteDatabase db = getReadableDatabase();
+		String sql = "SELECT * FROM participant p, conversation c WHERE p.conversation_id = c._id AND c._id = " + conversationId;
+//		Cursor c =  db.query(TABLE_NAME_PARTICIPANT, null, null, null, null, null,
+//				PARTICIPANT_IDENTIFICATION + " ASC");
+		
+		Cursor c = db.rawQuery(sql, null);
+		return c;
+	}
+	
+	public Cursor queryParticipants(){
+		return queryParticipants(getOpenConversationId());
+	}
+	
+	public long openConversation(String key, String UUID){	
+		Log.d(TAG, "open Converation");
+		
+		long rowId = -1;
+		
+//		SQLiteDatabase db = getReadableDatabase();
+//		String sql = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE " + CONVERSATION_UUID + " = '" + UUID + "' AND " + CONVERSATION_OPEN + " = 1;";
+//		
+//		Cursor c = db.rawQuery(sql, null);
+//		if (c.getCount() != 0){
+//			c.moveToFirst();
+//			rowId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+//		}
+//		else {
+//			db = getWritableDatabase();
+//			ContentValues values = new ContentValues();
+//			values.put(CONVERSATION_KEY, key);
+//			values.put(CONVERSATION_UUID, UUID);
+//			values.put(CONVERSATION_START, System.currentTimeMillis());
+//			values.put(CONVERSATION_OPEN, 1);
+//			rowId = db.insert(TABLE_NAME_CONVERSATION, null, values);
+//		}
+//		c.close();
+		
+		closeConversation();
+		
+		SQLiteDatabase db = getWritableDatabase();
+		ContentValues values = new ContentValues();
+		values.put(CONVERSATION_KEY, key);
+		values.put(CONVERSATION_UUID, UUID);
+		values.put(CONVERSATION_START, System.currentTimeMillis());
+		values.put(CONVERSATION_OPEN, 1);
+		rowId = db.insert(TABLE_NAME_CONVERSATION, null, values);
+		
+		return rowId;
+	}
+	
+	public void closeConversation(){
+		SQLiteDatabase db = getWritableDatabase();
+		ContentValues values = new ContentValues();
+		values.put(CONVERSATION_OPEN, 0);
+		values.put(CONVERSATION_END, System.currentTimeMillis());
+		db.update(TABLE_NAME_CONVERSATION, values, CONVERSATION_OPEN + " = 1", null);
+		//Log.d(TAG, "Conversation closed...");
+	}
+	
+	public long getOpenConversationId(){
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE " + CONVERSATION_OPEN + " = 1";
 		Cursor c = db.rawQuery(query, null);
-		
-		return c;
+		c.moveToFirst();
+		long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+		return conversationId;
 	}
-
-	public Cursor queryParticipants() {
+	
+	public String getOpenConversationUUID(){
 		SQLiteDatabase db = getReadableDatabase();
-		Cursor c =  db.query(TABLE_NAME_PARTICIPANTS, null, null, null, null, null,
-				PARTICIPANTS_IDENTIFICATION + " ASC");
-		return c;
+		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE " + CONVERSATION_OPEN + " = 1";
+		Cursor c = db.rawQuery(query, null);
+		c.moveToFirst();
+		String conversationUUID = c.getString(c.getColumnIndex(CONVERSATION_UUID));
+		return conversationUUID;
+	}
+	
+	public int getNextSequenceNumber(){
+		
+		long conversationId = getOpenConversationId();
+				
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "select max(" + MESSAGES_SEQUENCE_NUMBER + ") from "
+				+ TABLE_NAME_MESSAGE + " m, " + TABLE_NAME_PARTICIPANT
+				+ " p where m." + MESSAGE_SENDER_ID + " = p." + PARTICIPANT_ID
+				+ " and p." + PARTICIPANT_IDENTIFICATION + "='"
+				+ identification + "' and p." + PARTICIPANT_CONVERSATION_ID + " = " + conversationId + ";";
+		
+		Cursor c = db.rawQuery(query, null);
+		c.moveToFirst();
+		int nextSequenceNumber = c.getInt(0) + 1;
+		Log.d(TAG, "New Sequence number: " + nextSequenceNumber);
+		c.close();
+		return nextSequenceNumber;
+	}
+	
+	public int getCurrentParticipantSequenceNumber(String identification){
+		
+		long conversationId = getOpenConversationId();
+		int sequenceNumber = 0;
+		
+		
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "SELECT max(sequence_number) from message m, participant p WHERE m.sender_id = p._id and p.conversation_id = "
+				+ conversationId
+				+ " and p.identification = '"
+				+ identification
+				+ "';";
+		
+		Cursor c = db.rawQuery(query, null);
+		if (c.getCount() == 0){
+			sequenceNumber = 0;
+		}
+		else {
+			c.moveToFirst();
+			sequenceNumber = c.getInt(0);
+			c.close();
+		}
+		return sequenceNumber;
+	}
+	
+	public boolean isParticipantKnown(String identification) {
+		
+		boolean participantKnown = false;
+		
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "SELECT * FROM participant p WHERE p.identification = '" + identification + "';";
+		Cursor c = db.rawQuery(query, null);
+		if (c.getCount() > 0){
+			participantKnown = true;
+		}
+		c.close();
+		return participantKnown;
 	}
 }

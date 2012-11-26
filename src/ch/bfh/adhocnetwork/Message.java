@@ -19,26 +19,33 @@ public class Message implements Serializable {
 	
 	
 	private String message;
-	private int sequenceNumber;
+	private int sequenceNumber = -1;
 	private String sender;
 	private int messageType;
 	private String networkUUID;
+	private String senderIPAddress;
 
-	public Message(String message, int sequenceNumber, int messageType){
+	public Message(String message, int messageType, String sender){
 		this.message = message;
-		this.sequenceNumber = sequenceNumber;
 		this.messageType = messageType;
+		this.sender = sender;
+		
 	}
 	
-	public Message(String message, int sequenceNumber, int messageType, String networkUUID){
+	public Message(String message, int messageType, String sender, int sequenceNumber, String networkUUID){
 		this.message = message;
-		this.sequenceNumber = sequenceNumber;
 		this.messageType = messageType;
+		this.sender = sender;
 		this.networkUUID = networkUUID;
+		this.sequenceNumber = sequenceNumber;
 	}
 
 	public String getMessage() {
 		return message;
+	}
+	
+	public void setSequenceNumber(int sequenceNumber){
+		this.sequenceNumber = sequenceNumber;
 	}
 
 	public int getSequenceNumber() {
@@ -56,12 +63,22 @@ public class Message implements Serializable {
 	public String getNetworkUUID() {
 		return networkUUID;
 	}
+	
+	public String getSenderIPAddress() {
+		return senderIPAddress;
+	}
+	
+	public void setSenderIPAddress(String senderIPAddress){
+		this.senderIPAddress = senderIPAddress;
+	}
+	
 
 	@Override
 	public String toString() {
-		return "Message [message=" + message + ", sequenceNumber="
+		return "BroadcastMessage [message=" + message + ", sequenceNumber="
 				+ sequenceNumber + ", sender=" + sender + ", messageType="
-				+ messageType + "]";
+				+ messageType + ", networkUUID=" + networkUUID
+				+ ", senderIPAddress=" + senderIPAddress + "]";
 	}
 
 }

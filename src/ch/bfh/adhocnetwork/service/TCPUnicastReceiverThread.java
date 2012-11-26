@@ -1,11 +1,13 @@
 package ch.bfh.adhocnetwork.service;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -19,32 +21,36 @@ import javax.crypto.spec.SecretKeySpec;
 import android.util.Log;
 import ch.bfh.adhocnetwork.Message;
 
-public class UDPBroadcastReceiverThread implements Runnable { 
+public class TCPUnicastReceiverThread implements Runnable { 
 	
-	private static final String TAG = UDPBroadcastReceiverThread.class.getSimpleName();
+	private static final String TAG = TCPUnicastReceiverThread.class.getSimpleName();
 	
 	NetworkService service;
 	
-	public UDPBroadcastReceiverThread(NetworkService service) {
+	public TCPUnicastReceiverThread(NetworkService service) {
 		this.service = service;
 	}
 
 	public void run() {
-		DatagramSocket socket;
+		ServerSocket serverSocket;
+		Socket clientSocket;
 		Message msg;
+		InputStream in = null;
 		try {
-			socket = new DatagramSocket(12345);
-			socket.setBroadcast(true);
+			serverSocket = new ServerSocket(12345);
 			while (true && !Thread.currentThread().isInterrupted()) {
-
-				DatagramPacket packet = new DatagramPacket(new byte[1040], 1040);
-				socket.receive(packet);
-
-
-//				InetAddress address = packet.getAddress();
-//				int port = packet.getPort();
-//				int len = packet.getLength();
-				byte[] encryptedData = packet.getData();
+				clientSocket = serverSocket.accept();
+				
+		
+				in = clientSocket.getInputStream();
+			    DataInputStream dis = new DataInputStream(in);
+			    int len = 1040;
+			    byte[] encryptedData = new byte[len];
+			    if (len > 0) {
+			        dis.readFully(encryptedData);
+			    }
+				
+				
 				Log.d(TAG, "LENGTH: " + encryptedData.length);
 				
 				byte[] data = decrypt("1234".getBytes(), encryptedData);
@@ -62,14 +68,20 @@ public class UDPBroadcastReceiverThread implements Runnable {
 				}
 				
 				
-				msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
-				service.processBroadcastMessage(msg);
+				msg.setSenderIPAddress((clientSocket.getInetAddress()).getHostAddress());
 				
+				service.processUnicastMessage(msg);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e){
 			e.printStackTrace();
+		} finally {
+			try {
+				in.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
