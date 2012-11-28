@@ -16,7 +16,8 @@ public class Message implements Serializable {
 	public static final int MSG_MSGRESENDRES 	= 5;
 	public static final int MSG_DISCOVERNETS	= 6;
 	public static final int MSG_NETWORKAD		= 7;
-	
+	public static final int MSG_WHOISTHERE		= 8;
+	public static final int MSG_IAMHERE			= 9;
 	
 	private String message;
 	private int sequenceNumber = -1;
@@ -24,12 +25,12 @@ public class Message implements Serializable {
 	private int messageType;
 	private String networkUUID;
 	private String senderIPAddress;
+	private long timestamp;
 
 	public Message(String message, int messageType, String sender){
 		this.message = message;
 		this.messageType = messageType;
 		this.sender = sender;
-		
 	}
 	
 	public Message(String message, int messageType, String sender, int sequenceNumber, String networkUUID){
@@ -38,6 +39,7 @@ public class Message implements Serializable {
 		this.sender = sender;
 		this.networkUUID = networkUUID;
 		this.sequenceNumber = sequenceNumber;
+		this.timestamp = System.currentTimeMillis();
 	}
 
 	public String getMessage() {
@@ -70,6 +72,10 @@ public class Message implements Serializable {
 	
 	public void setSenderIPAddress(String senderIPAddress){
 		this.senderIPAddress = senderIPAddress;
+	}
+	
+	public long getTimestamp() {
+		return timestamp;
 	}
 	
 

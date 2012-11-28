@@ -93,9 +93,12 @@ public class WifiAPManager {
 		preferences = context.getSharedPreferences(PREFS_NAME, 0);
 		editor = preferences.edit();
 		editor.putString("originalApConfig", serializedAPConfig);
+		editor.putString("password", config.preSharedKey);
+		editor.putString("SSID", config.SSID);
 		editor.commit();
 		
 		this.config = config;
+		
 		
 		if (wifi == null) {
 			wifi = wifihandler;

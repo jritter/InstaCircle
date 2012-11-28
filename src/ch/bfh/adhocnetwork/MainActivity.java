@@ -118,12 +118,9 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		adhoc = new AdhocWiFiManager(wifi);
 		
 		
-//		if (wifi.isWifiEnabled() == false) {
-//			Toast.makeText(getApplicationContext(),
-//					"WiFi is disabled. Enabling it...", Toast.LENGTH_LONG)
-//					.show();
-//			wifi.setWifiEnabled(true);
-//		}
+		if (wifi.isWifiEnabled() == false) {
+			wifi.setWifiEnabled(true);
+		}
 
 		adapter = new SimpleAdapter(this, arraylist, R.layout.list_item_network,
 				new String[] { ITEM_DESCRIPTION }, new int[] { R.id.network_name });
@@ -190,21 +187,17 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 	    if (requestCode == 0) {
 	        if (resultCode == RESULT_OK) {
-	            String serializedAPConfig = intent.getStringExtra("SCAN_RESULT");
-	    		
-	    		try {
-	    			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(serializedAPConfig, Base64.DEFAULT)));
-	    			AdhocNetworkConfiguration networkConfig = (AdhocNetworkConfiguration) ois.readObject();
-	    			Log.d(TAG, networkConfig.toString());
-	    			AdhocWiFiManager adhoc = new AdhocWiFiManager(wifi);
-	    			adhoc.connectToNetwork(networkConfig.getSsid(), networkConfig.getPassword(), this);
-	    		} catch (StreamCorruptedException e) {
-	    			e.printStackTrace();
-	    		} catch (IOException e) {
-	    			e.printStackTrace();
-	    		} catch (ClassNotFoundException e){
-	    			e.printStackTrace();
-	    		}
+	            String [] config = intent.getStringExtra("SCAN_RESULT").split("\\|\\|");
+	            Log.d(TAG, "Extracted SSID from QR Code: " + config[0]);
+	            Log.d(TAG, "Extracted Password from QR Code: " + config[1]);
+	            
+	            
+	            SharedPreferences.Editor editor = preferences.edit();
+	    		editor.putString("SSID", config[0]);
+	    		editor.putString("password", config[1]);
+	    		editor.commit();
+	    		adhoc.connectToNetwork(config[0], config[1], this);
+
 	            // Handle successful scan
 	        } else if (resultCode == RESULT_CANCELED) {
 	            // Handle cancel

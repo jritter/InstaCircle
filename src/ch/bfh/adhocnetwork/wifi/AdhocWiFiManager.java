@@ -74,11 +74,11 @@ public class AdhocWiFiManager {
 			this.context = context;
 			d = new ProgressDialog(context);
 			
-			this.password = "\"".concat(password).concat("\"");
+			this.password = password;
 			
 			config = new WifiConfiguration();
 			//config.SSID = result.SSID;
-			config.SSID = "\"" + result.SSID + "\"";
+			config.SSID = result.SSID;
 
 			config.BSSID = result.BSSID;
 			config.hiddenSSID = false;
@@ -113,7 +113,9 @@ public class AdhocWiFiManager {
 			editor = preferences.edit();
 			editor.putInt("originalNetId", wifiManager.getConnectionInfo().getNetworkId());
 			editor.putString("password", password);
+			editor.putString("SSID", config.SSID);
 			editor.commit();
+			config.SSID = "\"" + config.SSID + "\"";
 			
 			Log.d(TAG, "PSK: " + config.preSharedKey);
 			Log.d(TAG, "=========================");

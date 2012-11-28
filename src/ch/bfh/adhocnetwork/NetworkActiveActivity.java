@@ -114,40 +114,8 @@ public class NetworkActiveActivity extends FragmentActivity implements ActionBar
 		switch (item.getItemId()) {
 		case R.id.display_qrcode:
 			
-			WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-			WifiAPManager wifiapman = new WifiAPManager();
-			WifiConfiguration currentConfig = null;
-			if (wifiapman.isWifiAPEnabled(wifiman)){
-				currentConfig = wifiapman.getWifiApConfiguration(wifiman);
-				Log.d(TAG, "Displaying AP Configuration...");
-			}
-			else {
-				int networkId = wifiman.getConnectionInfo().getNetworkId();
-				for (WifiConfiguration config : wifiman.getConfiguredNetworks()){
-					if (config.networkId == networkId){
-						currentConfig = config;
-						
-						SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
-						currentConfig.preSharedKey = preferences.getString("password", "");
-						break;
-					}
-				}
-				Log.d(TAG, "Displaying Wifi Configuration...");
-			}
-		
-			SerializableWifiConfiguration sConfig = new SerializableWifiConfiguration(currentConfig);
-			AdhocNetworkConfiguration networkConfiguration = new AdhocNetworkConfiguration(currentConfig.SSID, currentConfig.preSharedKey, "testtest");
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	        ObjectOutputStream oos;
-			try {
-				oos = new ObjectOutputStream(baos);
-				oos.writeObject(networkConfiguration);
-		        oos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			String serializedConfig = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-			
+			SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
+			String serializedConfig = preferences.getString("SSID", "N/A") + "||" + preferences.getString("password", "N/A");
 			
 			intent = new Intent("com.google.zxing.client.android.ENCODE");
 			intent.putExtra("ENCODE_TYPE", "TEXT_TYPE");
@@ -171,9 +139,6 @@ public class NetworkActiveActivity extends FragmentActivity implements ActionBar
         			Intent intent = new Intent("messageSend");
         			intent.putExtra("message", message);
         			LocalBroadcastManager.getInstance(NetworkActiveActivity.this).sendBroadcast(intent);
-    				NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-    				notificationManager.cancelAll();
-        			NetworkActiveActivity.this.finish();
                 } });
             builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {

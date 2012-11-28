@@ -113,7 +113,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			values.put(MESSAGE_SENDER_ID, getParticipantID(message.getSender()));
 			values.put(MESSAGES_SEQUENCE_NUMBER, message.getSequenceNumber());
 			values.put(MESSAGES_SOURCE_IP_ADDRESS, message.getSenderIPAddress());
-			values.put(MESSAGES_TIMESTAMP, System.currentTimeMillis());
+			values.put(MESSAGES_TIMESTAMP, message.getTimestamp());
 			rowId = db.insert(TABLE_NAME_MESSAGE, null, values);
 		} catch (SQLiteException e) {
 			Log.e(TAG, "insert()", e);
@@ -158,7 +158,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		SQLiteDatabase db = getReadableDatabase();
 		
 		//String query = "SELECT * FROM messages m LEFT OUTER JOIN participants p ON m.sender_id = p._id ORDER BY m.timestamp ASC;";
-		String sql = "SELECT * FROM participant p, conversation c, message m WHERE m.sender_id = p._id AND p.conversation_id = c._id AND c._id = " + conversationId;
+		String sql = "SELECT * FROM participant p, conversation c, message m WHERE m.sender_id = p._id AND p.conversation_id = c._id AND c._id = " + conversationId + " ORDER BY timestamp ASC";
 		Cursor c = db.rawQuery(sql, null);
 		return c;
 	}
@@ -170,7 +170,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	public Cursor queryMyMessages (long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
 		String myIdentification = context.getSharedPreferences("network_preferences", 0).getString("identification", "N/A");
-		String sql = "SELECT * FROM participant p, conversation c, message m WHERE m.sender_id = p._id AND p.conversation_id = c._id AND c._id = " + conversationId + " AND p.identification = '" + myIdentification + "';";
+		String sql = "SELECT * FROM participant p, conversation c, message m WHERE m.sender_id = p._id AND p.conversation_id = c._id AND c._id = " + conversationId + " AND p.identification = '" + myIdentification + "' ORDER BY timestamp ASC;";
 		Cursor c = db.rawQuery(sql, null);
 		return c;
 	}

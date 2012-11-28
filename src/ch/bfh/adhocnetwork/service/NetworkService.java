@@ -49,6 +49,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
+import ch.bfh.adhocnetwork.MainActivity;
 import ch.bfh.adhocnetwork.Message;
 import ch.bfh.adhocnetwork.NetworkActiveActivity;
 import ch.bfh.adhocnetwork.R;
@@ -75,8 +76,8 @@ public class NetworkService extends Service {
 
 	private NetworkDbHelper dbHelper;
 	
-	private Thread udpBroadcastReceiverThread;
-	private Thread tcpUnicastReceiverThread;
+	private UDPBroadcastReceiverThread udpBroadcastReceiverThread;
+	private TCPUnicastReceiverThread tcpUnicastReceiverThread;
 
 	public NetworkService() {
 		
@@ -95,6 +96,7 @@ public class NetworkService extends Service {
 	
 	@Override
 	public void onDestroy() {
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(messageSendReceiver);
 		dbHelper.close();
 		super.onDestroy();
 	}
@@ -116,10 +118,10 @@ public class NetworkService extends Service {
 		
 		notificationManager.notify(TAG, 1, notification);
 
-		udpBroadcastReceiverThread = new Thread(new UDPBroadcastReceiverThread(this));
+		udpBroadcastReceiverThread = new UDPBroadcastReceiverThread(this);
 		udpBroadcastReceiverThread.start();
 		
-		tcpUnicastReceiverThread = new Thread(new TCPUnicastReceiverThread(this));
+		tcpUnicastReceiverThread = new TCPUnicastReceiverThread(this);
 		tcpUnicastReceiverThread.start();
 		
 		
@@ -131,11 +133,11 @@ public class NetworkService extends Service {
 
 		broadcast = getBroadcastAddress();
 
-		if (intent.getStringExtra("action").equals("createnetwork")) {
+		if (intent.getStringExtra("action") != null && intent.getStringExtra("action").equals("createnetwork")) {
 				
 			createNetwork();
 			
-		} else if (intent.getStringExtra("action").equals("joinnetwork")) {
+		} else if (intent.getStringExtra("action") != null && intent.getStringExtra("action").equals("joinnetwork")) {
 			
 			
 			// I want to join to an existing network
@@ -198,10 +200,10 @@ public class NetworkService extends Service {
 			Log.d(TAG, "Leave...");
 			break;
 		case Message.MSG_MSGRESENDREQ:
-			Log.d(TAG, "Resend Request...");
+			// should be handled as unicast
 			break;
 		case Message.MSG_MSGRESENDRES:
-			Log.d(TAG, "Resend Response...");
+			// should be handled as unicast
 			break;
 		case Message.MSG_NETWORKAD:
 			Log.d(TAG, "got network advertisement for " + msg.getMessage() + ", adding to network list...");
@@ -212,6 +214,15 @@ public class NetworkService extends Service {
 			Log.d(TAG, "got discovernetwork, advertising...");
 			advertiseNetwork();
 			break;
+		case Message.MSG_WHOISTHERE:
+			String identification = getSharedPreferences(PREFS_NAME, 0)
+			.getString("identification", "N/A");
+			Message response = new Message((dbHelper.getNextSequenceNumber() - 1) + "", Message.MSG_IAMHERE, identification, -1, networkUUID);
+			new UnicastMessageAsyncTask(msg.getSenderIPAddress()).execute(response);
+			break;
+		case Message.MSG_IAMHERE:
+			// should be handled as unicast
+			break;
 		default:
 			Log.d(TAG, "Default...");
 			break;
@@ -221,10 +232,10 @@ public class NetworkService extends Service {
 			
 			// Check whether participant already exists in the database
 			
-			if (!dbHelper.isParticipantKnown(msg.getSender())){
-				// Write participant into database if it does not exist
-				dbHelper.insertParticipant(msg.getSender());
-			}
+//			if (!dbHelper.isParticipantKnown(msg.getSender())){
+//				// Write participant into database if it does not exist
+//				dbHelper.insertParticipant(msg.getSender());
+//			}
 			
 			Log.d(TAG, "Got message with sequence number " + msg.getSequenceNumber());
 			Log.d(TAG, "Expecting sequence Number " + (dbHelper.getCurrentParticipantSequenceNumber(msg.getSender()) + 1));
@@ -243,22 +254,38 @@ public class NetworkService extends Service {
 			}
 		}
 		
-		Intent intent = new Intent("messageArrived");
-		intent.putExtra("message", msg);
-		
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 		
 		String identification = getSharedPreferences(PREFS_NAME, 0).getString("identification", "N/A");
 		
-		
 		// Stop everything as soon as the own leave message has been processed
 		if (msg.getMessageType() == Message.MSG_MSGLEAVE && msg.getSender().equals(identification)){
+			tcpUnicastReceiverThread.interrupt();
 			udpBroadcastReceiverThread.interrupt();
+			try {
+				tcpUnicastReceiverThread.serverSocket.close();
+				udpBroadcastReceiverThread.socket.close();
+			} catch (IOException e) {
+				
+			}
+			
 			dbHelper.closeConversation();
 			WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 			new AdhocWiFiManager(wifiman).restoreWifiConfiguration(getBaseContext());
 			new WifiAPManager().disableHotspot(wifiman, getBaseContext());
 			stopSelf();
+			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			notificationManager.cancelAll();
+			Intent intent = new Intent(this, MainActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+			startActivity(intent);
+			
+		}
+		else {
+			
+			Intent intent = new Intent("messageArrived");
+			intent.putExtra("message", msg);
+			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 		}
 
 	}
@@ -335,10 +362,22 @@ public class NetworkService extends Service {
 			
 			break;
 			
+		case Message.MSG_IAMHERE:
+			Log.d(TAG, "Got I am here message from " + msg.getSender() + " with Sequence number " +  Integer.parseInt(msg.getMessage()));
 			
+			// Check if the received sequence number is bigger than the one we have in our db, request messages if true
+			if (Integer.parseInt(msg.getMessage()) > dbHelper.getCurrentParticipantSequenceNumber(msg.getSender())){
+				// Request missing messages
+				Log.d(TAG, "Messagelist from " + msg.getSender() + " incomplete, requesting messages...");
+				Message resendRequestMessage = new Message("", Message.MSG_MSGRESENDREQ, getSharedPreferences(PREFS_NAME, 0)
+						.getString("identification", "N/A"), -1, networkUUID);
+				new UnicastMessageAsyncTask(msg.getSenderIPAddress()).execute(resendRequestMessage);
+			}
 			
+			break;
 		}
 		
+		// non-Broadcast messages don't get a valid sequence number
 		if (Arrays.asList(messagesToSave).contains(msg.getMessageType())){
 			msg.setSequenceNumber(-1);
 			dbHelper.insertMessage(msg);
@@ -457,6 +496,7 @@ public class NetworkService extends Service {
 	private BroadcastReceiver messageSendReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG, "Localbroadcastreceiver got called...");
 			// Get extra data included in the Intent
 			Message msg = (Message) intent.getSerializableExtra("message");
 			new BroadcastMessageAsyncTask().execute(msg);
@@ -534,14 +574,19 @@ public class NetworkService extends Service {
 	}
 
 	private void joinNetwork(String networkUUID, String identifier) {
+		String identification = getSharedPreferences(PREFS_NAME, 0)
+				.getString("identification", "N/A");
+		
 		Message joinMessage = new Message(identifier, Message.MSG_MSGJOIN,
-				getSharedPreferences(PREFS_NAME, 0)
-				.getString("identification", "N/A"), dbHelper.getNextSequenceNumber(), networkUUID);
+				identification, dbHelper.getNextSequenceNumber(), networkUUID);
 		SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString("networkUUID", networkUUID);
 		editor.commit();
 		new BroadcastMessageAsyncTask().execute(joinMessage);
+		
+		Message whoisthereMessage = new Message(identification, Message.MSG_WHOISTHERE, identification, -1, networkUUID);
+		new BroadcastMessageAsyncTask().execute(whoisthereMessage);
 	}
 
 	private void discoverNetworks() {
@@ -553,9 +598,10 @@ public class NetworkService extends Service {
 	}
 
 	private void advertiseNetwork() {
+		String identification = getSharedPreferences(PREFS_NAME, 0)
+				.getString("identification", "N/A");
 		Message adMessage = new Message(networkUUID, Message.MSG_NETWORKAD,
-				getSharedPreferences(PREFS_NAME, 0)
-				.getString("identification", "N/A"), -1, networkUUID);
+				identification, -1, networkUUID);
 		new BroadcastMessageAsyncTask().execute(adMessage);
 	}
 

@@ -19,51 +19,62 @@ import javax.crypto.spec.SecretKeySpec;
 import android.util.Log;
 import ch.bfh.adhocnetwork.Message;
 
-public class UDPBroadcastReceiverThread implements Runnable { 
+public class UDPBroadcastReceiverThread extends Thread { 
 	
 	private static final String TAG = UDPBroadcastReceiverThread.class.getSimpleName();
+	
+	public DatagramSocket socket;
 	
 	NetworkService service;
 	
 	public UDPBroadcastReceiverThread(NetworkService service) {
+		this.setName(TAG);
 		this.service = service;
 	}
 
 	public void run() {
-		DatagramSocket socket;
 		Message msg;
 		try {
 			socket = new DatagramSocket(12345);
 			socket.setBroadcast(true);
-			while (true && !Thread.currentThread().isInterrupted()) {
+			while (!Thread.currentThread().isInterrupted()) {
 
-				DatagramPacket packet = new DatagramPacket(new byte[1040], 1040);
-				socket.receive(packet);
-
-
-//				InetAddress address = packet.getAddress();
-//				int port = packet.getPort();
-//				int len = packet.getLength();
-				byte[] encryptedData = packet.getData();
-				Log.d(TAG, "LENGTH: " + encryptedData.length);
-				
-				byte[] data = decrypt("1234".getBytes(), encryptedData);
-				
-				
-				ByteArrayInputStream bis = new ByteArrayInputStream(data);
-				ObjectInput oin = null;
 				try {
-				  oin = new ObjectInputStream(bis);
-				  msg = (Message) oin.readObject(); 
-
-				} finally {
-				  bis.close();
-				  oin.close();
+					DatagramPacket packet = new DatagramPacket(new byte[1040], 1040);
+					socket.receive(packet);
+	
+	
+	//				InetAddress address = packet.getAddress();
+	//				int port = packet.getPort();
+	//				int len = packet.getLength();
+					byte[] encryptedData = packet.getData();
+					Log.d(TAG, "LENGTH: " + encryptedData.length);
+					
+					byte[] data = decrypt("1234".getBytes(), encryptedData);
+					
+					
+					ByteArrayInputStream bis = new ByteArrayInputStream(data);
+					ObjectInput oin = null;
+					try {
+					  oin = new ObjectInputStream(bis);
+					  msg = (Message) oin.readObject(); 
+	
+					} finally {
+					  bis.close();
+					  oin.close();
+					}
+					
+					if (!Thread.currentThread().isInterrupted()){
+						msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
+						service.processBroadcastMessage(msg);
+					}
+					
 				}
-				
-				
-				msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
-				service.processBroadcastMessage(msg);
+				catch (IOException e){
+					Log.d(TAG, "Terminating...");
+					socket.close();
+					Thread.currentThread().interrupt();
+				}
 				
 			}
 		} catch (IOException e) {
