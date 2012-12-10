@@ -1,5 +1,8 @@
 package ch.bfh.adhocnetwork.wifi;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 import android.app.AlertDialog;
@@ -9,6 +12,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.net.DhcpInfo;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -31,9 +35,6 @@ public class AdhocWiFiManager {
 	public AdhocWiFiManager(WifiManager wifiManager){
 		this.wifiManager = wifiManager;
 	}
-	
-
-	
 	
 	public void connectToNetwork(ScanResult result, String password, Context context){
 		new ConnectWifiTask(result, password, context).execute();
@@ -135,19 +136,19 @@ public class AdhocWiFiManager {
 				nInfo = conn.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 				Log.d(TAG, nInfo.getDetailedState().toString() + "  " + nInfo.getState().toString());
 				wifiManager.getConnectionInfo();
-				if (nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED && nInfo.getState() == NetworkInfo.State.CONNECTED){
+				if (nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED && nInfo.getState() == NetworkInfo.State.CONNECTED && getBroadcastAddress() != null){
 					Log.d(TAG, "Connected!");
 					break;
 				}
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(3000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 				i++;
 			}
 			
-			if (!(nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED && nInfo.getState() == NetworkInfo.State.CONNECTED)){
+			if (!(nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED && nInfo.getState() == NetworkInfo.State.CONNECTED && getBroadcastAddress() != null)){
 				success = false;
 			}
 			else {
@@ -162,6 +163,7 @@ public class AdhocWiFiManager {
 				context.stopService(intent);
 				context.startService(intent);
 			}
+			Log.d(TAG, "Success: " + success);
 			return null;
 		}
 		
@@ -236,6 +238,23 @@ public class AdhocWiFiManager {
 //			d.dismiss();
 		}
 	}
-
 	
+	private InetAddress getBroadcastAddress() {
+		DhcpInfo myDhcpInfo = wifiManager.getDhcpInfo();
+		if (myDhcpInfo == null) {
+			System.out.println("Could not get broadcast address");
+			return null;
+		}
+		int broadcast = (myDhcpInfo.ipAddress & myDhcpInfo.netmask)
+					| ~myDhcpInfo.netmask;
+		byte[] quads = new byte[4];
+		for (int k = 0; k < 4; k++)
+		quads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
+		try {
+			return InetAddress.getByAddress(quads);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }

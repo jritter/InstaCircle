@@ -15,6 +15,7 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,6 +43,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.IBinder;
@@ -131,7 +133,21 @@ public class NetworkService extends Service {
 		LocalBroadcastManager.getInstance(this).registerReceiver(
 				messageSendReceiver, new IntentFilter("messageSend"));
 
-		broadcast = getBroadcastAddress();
+		do {
+			broadcast = getBroadcastAddress();
+			if (broadcast != null){
+				break;
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} while (broadcast == null);
+		
+		
+		
+		Log.d(TAG, "Broadcast Address: " + broadcast.getHostAddress());
 
 		if (intent.getStringExtra("action") != null && intent.getStringExtra("action").equals("createnetwork")) {
 				
@@ -537,17 +553,12 @@ public class NetworkService extends Service {
 				niEnum = NetworkInterface.getNetworkInterfaces();
 				while (niEnum.hasMoreElements()) {
 					NetworkInterface ni = niEnum.nextElement();
-					Log.d(TAG, "looping...");
 					if (!ni.isLoopback()) {
 						for (InterfaceAddress interfaceAddress : ni
 								.getInterfaceAddresses()) {
 
 							found_bcast_address = interfaceAddress
 									.getBroadcast();
-
-							// found_bcast_address =
-							// found_bcast_address.substring(1);
-
 						}
 
 						if (found_bcast_address != null) {
@@ -565,7 +576,7 @@ public class NetworkService extends Service {
 
 		return found_bcast_address;
 	}
-
+	
 	private void createNetwork() {
 		networkUUID = UUID.randomUUID().toString();
 		dbHelper.openConversation("testtest", networkUUID);
