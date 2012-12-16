@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.Toast;
 import ch.bfh.adhocnetwork.wifi.WifiAPManager;
 
 public class MessageFragment extends Fragment implements
@@ -32,7 +31,6 @@ public class MessageFragment extends Fragment implements
 		
 		EditText et = (EditText)getActivity().findViewById(R.id.message_text);
 		
-		Toast.makeText(getActivity(), et.getText().toString(), Toast.LENGTH_SHORT).show();
 		Message message = new Message(et.getText().toString(), Message.MSG_CONTENT, getActivity().getSharedPreferences(
 				"network_preferences", 0).getString("identifier", "N/A"));
 		Intent intent = new Intent("messageSend");

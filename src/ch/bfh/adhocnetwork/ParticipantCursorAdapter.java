@@ -25,6 +25,21 @@ public class ParticipantCursorAdapter extends CursorAdapter {
 				cursor.getColumnIndex("identification")));
         
 		description.setText("\n");
+		
+		switch (cursor.getInt(cursor.getColumnIndex("state"))){
+        case 0:
+        	description.setText("inactive participant\n");
+        	icon.setBackgroundColor(context.getResources().getColor(android.R.color.holo_orange_light));
+        	break;
+        case 1:
+        	description.setText("active participant\n");
+        	icon.setBackgroundColor(context.getResources().getColor(android.R.color.holo_green_light));
+        	break;
+        default:
+        	description.setText("participant with unknown state\n");
+        	icon.setBackgroundColor(context.getResources().getColor(android.R.color.holo_red_light));
+        	break;
+		}
 	}
  
 	@Override

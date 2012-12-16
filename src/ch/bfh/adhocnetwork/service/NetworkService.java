@@ -15,7 +15,6 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -43,14 +42,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 import ch.bfh.adhocnetwork.MainActivity;
 import ch.bfh.adhocnetwork.Message;
 import ch.bfh.adhocnetwork.NetworkActiveActivity;
@@ -128,7 +125,6 @@ public class NetworkService extends Service {
 		
 		
 		Log.d(TAG, "Service started");
-		Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show();
 
 		LocalBroadcastManager.getInstance(this).registerReceiver(
 				messageSendReceiver, new IntentFilter("messageSend"));
@@ -196,7 +192,7 @@ public class NetworkService extends Service {
 
 	public void processBroadcastMessage(Message msg) {
 		Log.d(TAG, "Broadcast Message received...");
-		
+		Intent intent;
 		if (!checkMessageConsistency()){
 			return;
 		}
@@ -209,12 +205,14 @@ public class NetworkService extends Service {
 		case Message.MSG_MSGJOIN:
 			Log.d(TAG, "Join...");
 			dbHelper.insertParticipant(msg.getMessage(), msg.getSenderIPAddress());
-			Intent intent = new Intent("participantJoined");
+			intent = new Intent("participantJoined");
 			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			break;
 		case Message.MSG_MSGLEAVE:
 			Log.d(TAG, "Leave...");
 			dbHelper.updateParticipantState(msg.getSender(), 0);
+			intent = new Intent("participantChangedState");
+			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			break;
 		case Message.MSG_MSGRESENDREQ:
 			// should be handled as unicast
@@ -292,7 +290,7 @@ public class NetworkService extends Service {
 			stopSelf();
 			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			notificationManager.cancelAll();
-			Intent intent = new Intent(this, MainActivity.class);
+			intent = new Intent(this, MainActivity.class);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 			startActivity(intent);
@@ -300,7 +298,7 @@ public class NetworkService extends Service {
 		}
 		else {
 			
-			Intent intent = new Intent("messageArrived");
+			intent = new Intent("messageArrived");
 			intent.putExtra("message", msg);
 			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 		}
@@ -367,6 +365,7 @@ public class NetworkService extends Service {
     			ArrayList<Message> deserializedMessages =  (ArrayList<Message>) ois.readObject();
     			for (Message message : deserializedMessages){
     				Log.d(TAG, "Reprocessing message...");
+    				message.setSenderIPAddress(msg.getSenderIPAddress());
     				processBroadcastMessage(message);
     			}
     		} catch (StreamCorruptedException e) {
@@ -399,6 +398,10 @@ public class NetworkService extends Service {
 			msg.setSequenceNumber(-1);
 			dbHelper.insertMessage(msg);
 		}
+		
+		Intent intent = new Intent("messageArrived");
+		intent.putExtra("message", msg);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 	
 	private boolean checkMessageConsistency() {
@@ -513,10 +516,21 @@ public class NetworkService extends Service {
 	private BroadcastReceiver messageSendReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			
+			boolean broadcast = intent.getBooleanExtra("broadcast", true);
+			
 			Log.d(TAG, "Localbroadcastreceiver got called...");
 			// Get extra data included in the Intent
 			Message msg = (Message) intent.getSerializableExtra("message");
-			new BroadcastMessageAsyncTask().execute(msg);
+			
+			if (broadcast){
+				Log.d(TAG, "sending Broadcast message");
+				new BroadcastMessageAsyncTask().execute(msg);
+			}
+			else {
+				Log.d(TAG, "sending Unicast message");
+				new UnicastMessageAsyncTask(intent.getStringExtra("ipAddress")).execute(msg);
+			}
 		}
 	};
 

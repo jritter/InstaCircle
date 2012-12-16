@@ -39,8 +39,12 @@ public class ParticipantsListFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
               
+        
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("participantJoined");
+        intentFilter.addAction("participantChangedState");
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
-				mMessageReceiver, new IntentFilter("participantJoined"));
+				mMessageReceiver, intentFilter);
 		String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0).getString("networkUUID", "");
         helper = new NetworkDbHelper(getActivity());
         cursor = helper.queryParticipants();

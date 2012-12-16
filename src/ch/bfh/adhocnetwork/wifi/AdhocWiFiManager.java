@@ -1,6 +1,5 @@
 package ch.bfh.adhocnetwork.wifi;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;

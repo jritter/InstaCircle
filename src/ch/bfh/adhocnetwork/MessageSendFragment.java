@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -14,8 +15,12 @@ import ch.bfh.adhocnetwork.db.NetworkDbHelper;
 
 public class MessageSendFragment extends Fragment implements OnClickListener {
 	
+	private static final String TAG = MessageSendFragment.class.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
 	private NetworkDbHelper dbHelper;
+	private boolean broadcast = true;
+	private String ipAddress = null;
+	
 
 	Button btnSend;
 	
@@ -35,6 +40,11 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
         btnSend = (Button) rootView.findViewById(R.id.send_button);
         btnSend.setOnClickListener(this);
         dbHelper = new NetworkDbHelper(getActivity());
+        
+        if (getActivity() instanceof ParticipantDetailActivity){
+        	ipAddress = ((ParticipantDetailActivity)getActivity()).getIpAddress();
+        	broadcast = false;
+        }
         return rootView;
     }
 
@@ -48,8 +58,28 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 			Message message = new Message(et.getText().toString(), Message.MSG_CONTENT, identification, dbHelper.getNextSequenceNumber(), networkUUID);
 			Intent intent = new Intent("messageSend");
 			intent.putExtra("message", message);
-			LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+			if (broadcast == false && ipAddress == null){
+				Log.w(TAG, "IP Address not set, cannot send unicast message");
+			}
+			else if (broadcast == false){
+				intent.putExtra("ipAddress", ipAddress);
+				intent.putExtra("broadcast", false);
+				LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+			}
+			else {
+				intent.putExtra("broadcast", true);
+				LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
+			}
 			et.setText("");
+			
 		}
+	}
+
+	public boolean isBroadcast() {
+		return broadcast;
+	}
+
+	public String getIpAddress() {
+		return ipAddress;
 	}
 }

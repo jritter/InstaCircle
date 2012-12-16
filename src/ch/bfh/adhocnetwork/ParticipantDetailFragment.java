@@ -74,7 +74,5 @@ public class ParticipantDetailFragment extends Fragment implements
         	participantStatus.setText("unknown");
         	break;
         }
-        
-        
 	}
 }

@@ -1,6 +1,7 @@
 package ch.bfh.adhocnetwork;
 
 
+import ch.bfh.adhocnetwork.db.NetworkDbHelper;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,8 +13,6 @@ import android.support.v4.app.ListFragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.ListView;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
-import ch.bfh.adhocnetwork.dummy.DummyContent;
 
 public class MessageListFragment extends ListFragment {
 
@@ -21,7 +20,6 @@ public class MessageListFragment extends ListFragment {
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
     private static final String PREFS_NAME = "network_preferences";
 
-    private Callbacks mCallbacks = sDummyCallbacks;
     private int mActivatedPosition = ListView.INVALID_POSITION;
     
     //private SimpleCursorAdapter sca;
@@ -45,22 +43,11 @@ public class MessageListFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-//        Message msg = new Message("ajlsdkjfk", 1, 2);
-//        
-//        messages.add(msg);
-//        
-//        setListAdapter(new ArrayAdapter<Message>(getActivity(),
-//                R.layout.list_item_message,
-//                R.id.label,
-//                messages));
-//        
+
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, new IntentFilter("messageArrived"));
         helper = new NetworkDbHelper(getActivity());
         cursor = helper.queryMessages();
-        
-        //sca = new SimpleCursorAdapter(getActivity(), R.layout.list_item_message, cursor, new String [] { "message" }, new int [] { R.id.content}, 2);
         
         mca = new MessageCursorAdapter(getActivity(), cursor);
         
@@ -79,28 +66,7 @@ public class MessageListFragment extends ListFragment {
         this.getListView().setTranscriptMode(2);
     }
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-//        if (!(activity instanceof Callbacks)) {
-//            throw new IllegalStateException("Activity must implement fragment's callbacks.");
-//        }
-//
-//        mCallbacks = (Callbacks) activity;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mCallbacks = sDummyCallbacks;
-    }
-
-    @Override
-    public void onListItemClick(ListView listView, View view, int position, long id) {
-        super.onListItemClick(listView, view, position, id);
-        mCallbacks.onItemSelected(DummyContent.ITEMS.get(position).id);
-    }
-
+    
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
