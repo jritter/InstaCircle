@@ -10,11 +10,9 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
 import android.widget.ListView;
 import ch.bfh.adhocnetwork.db.NetworkDbHelper;
-import ch.bfh.adhocnetwork.dummy.DummyContent;
 
 public class ParticipantsListFragment extends ListFragment {
 
@@ -22,10 +20,10 @@ public class ParticipantsListFragment extends ListFragment {
     private static final String STATE_ACTIVATED_POSITION = "activated_position";
     private static final String PREFS_NAME = "network_preferences";
 
-    private Callbacks mCallbacks = sDummyCallbacks;
     private int mActivatedPosition = ListView.INVALID_POSITION;
     
-    private SimpleCursorAdapter sca;
+    //private SimpleCursorAdapter sca;
+    private ParticipantCursorAdapter pca;
     
     private Cursor cursor;
     private NetworkDbHelper helper;
@@ -33,11 +31,6 @@ public class ParticipantsListFragment extends ListFragment {
     public interface Callbacks {
         public void onItemSelected(String id);
     }
-
-    private static Callbacks sDummyCallbacks = new Callbacks() {
-        public void onItemSelected(String id) {
-        }
-    };
 
     public ParticipantsListFragment() {
     }
@@ -52,10 +45,9 @@ public class ParticipantsListFragment extends ListFragment {
         helper = new NetworkDbHelper(getActivity());
         cursor = helper.queryParticipants();
         
+        pca = new ParticipantCursorAdapter(getActivity(), cursor);
         
-        sca = new SimpleCursorAdapter(getActivity(), R.layout.list_item_participant, cursor, new String [] { "identification" }, new int [] { R.id.label}, 2);
-        
-        setListAdapter(sca);
+        setListAdapter(pca);
         
     }
 
@@ -73,23 +65,20 @@ public class ParticipantsListFragment extends ListFragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-//        if (!(activity instanceof Callbacks)) {
-//            throw new IllegalStateException("Activity must implement fragment's callbacks.");
-//        }
-//
-//        mCallbacks = (Callbacks) activity;
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        mCallbacks = sDummyCallbacks;
     }
 
     @Override
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
-        mCallbacks.onItemSelected(DummyContent.ITEMS.get(position).id);
+        Cursor cursor = (Cursor) getListAdapter().getItem(position);
+        Intent intent = new Intent(getActivity(), ParticipantDetailActivity.class);
+        intent.putExtra("participant_id", cursor.getInt(cursor.getColumnIndex("_id")));
+        getActivity().startActivity(intent);
     }
 
     @Override
@@ -126,7 +115,9 @@ public class ParticipantsListFragment extends ListFragment {
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			sca.changeCursor(helper.queryParticipants());
+			pca.changeCursor(helper.queryParticipants());
 		}
 	};
+	
+	
 }

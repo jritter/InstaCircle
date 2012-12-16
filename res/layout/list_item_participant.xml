@@ -1,24 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content" >
 
     <ImageView
         android:id="@+id/icon"
-        android:layout_width="22dp"
-        android:layout_height="22dp"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
         android:layout_marginLeft="4dp"
         android:layout_marginRight="10dp"
         android:layout_marginTop="4dp"
-        android:src="@drawable/ic_launcher" >
+        android:background="@android:color/holo_blue_light"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:src="@drawable/glyphicons_003_user" >
+
     </ImageView>
 
-    <TextView
-        android:id="@+id/label"
+    <LinearLayout
+        android:id="@+id/message_row_vertical_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@+id/label"
-        android:textSize="20dp" >
-    </TextView>
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textSize="14dp"
+            android:textStyle="italic" >
+
+        </TextView>
+        
+        <TextView
+            android:id="@+id/content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Content"
+            android:textSize="20dp" >
+        </TextView>
+    </LinearLayout>
 
 </LinearLayout> 

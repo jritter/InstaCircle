@@ -5,6 +5,9 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class ParticipantsFragment extends Fragment implements
 		ParticipantsListFragment.Callbacks {
@@ -24,7 +27,7 @@ public class ParticipantsFragment extends Fragment implements
     }
 
 	public void onItemSelected(String id) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 }

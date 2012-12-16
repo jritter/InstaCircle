@@ -59,6 +59,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ch.bfh.adhocnetwork.MainActivity" />
         </activity>
+        <activity
+            android:name=".ParticipantDetailActivity"
+            android:label="@string/title_activity_participant_detail" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ch.bfh.adhocnetwork.NetworkActiveActivity" />
+        </activity>
     </application>
 
 </manifest>

@@ -16,7 +16,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	// Basic DB parameters
 	private static final String DATABASE_NAME = "network.db";
-	private static final int DATABASE_VERSION = 5;
+	private static final int DATABASE_VERSION = 6;
 
 	// Table names
 	private static final String TABLE_NAME_MESSAGE = "message";
@@ -36,6 +36,8 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	private static final String PARTICIPANT_ID = "_id";
 	private static final String PARTICIPANT_CONVERSATION_ID = "conversation_id";
 	private static final String PARTICIPANT_IDENTIFICATION = "identification";
+	private static final String PARTICIPANT_IP_ADDRESS = "ip_address";
+	private static final String PARTICIPANT_STATE = "state";
 	
 	// Attributes of the conversations table
 	private static final String CONVERSATION_ID = "_id";
@@ -73,6 +75,8 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 				+ PARTICIPANT_ID + " INTEGER PRIMARY KEY, "
 				+ PARTICIPANT_CONVERSATION_ID + " INTEGER, "
 				+ PARTICIPANT_IDENTIFICATION + " TEXT, "
+				+ PARTICIPANT_IP_ADDRESS + " TEXT, "
+				+ PARTICIPANT_STATE + " INTEGER, "
 				+ "FOREIGN KEY(" + PARTICIPANT_CONVERSATION_ID + ") REFERENCES " + TABLE_NAME_CONVERSATION + "(" + CONVERSATION_ID + "));";
 		
 		db.execSQL(sql);
@@ -133,14 +137,23 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	public long getParticipantID(String participantIdentification){
 		return getParticipantID(participantIdentification, getOpenConversationId());
 	}
+	
+	public Cursor queryParticipant(int participantId){
+		SQLiteDatabase db = getReadableDatabase();
+		String sql = "SELECT * FROM participant p WHERE _id = " + participantId;
+		Cursor c = db.rawQuery(sql, null);
+		return c;
+	}
 
-	public long insertParticipant(String participantIdentification, long conversationId) {
+	public long insertParticipant(String participantIdentification, String ipAddress, long conversationId) {
 		long rowId = -1;
 		try {
 			SQLiteDatabase db = getWritableDatabase();
 			ContentValues values = new ContentValues();
 			values.put(PARTICIPANT_IDENTIFICATION, participantIdentification);
 			values.put(PARTICIPANT_CONVERSATION_ID, conversationId);
+			values.put(PARTICIPANT_IP_ADDRESS, ipAddress);
+			values.put(PARTICIPANT_STATE, 1);
 			rowId = db.insert(TABLE_NAME_PARTICIPANT, null, values);
 		} catch (SQLiteException e) {
 			Log.e(TAG, "insert()", e);
@@ -150,8 +163,15 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return rowId;
 	}
 	
-	public long insertParticipant(String participantIdentification){
-		return insertParticipant(participantIdentification, getOpenConversationId());
+	public void updateParticipantState(String participantIdentification, int newState){
+		SQLiteDatabase db = getWritableDatabase();
+		ContentValues values = new ContentValues();
+		values.put(PARTICIPANT_STATE, newState);
+		db.update(TABLE_NAME_PARTICIPANT, values, PARTICIPANT_IDENTIFICATION + " = '" + participantIdentification + "'", null);
+	}
+	
+	public long insertParticipant(String participantIdentification, String ipAddress){
+		return insertParticipant(participantIdentification, ipAddress, getOpenConversationId());
 	}
 	
 	public Cursor queryMessages(long conversationId) {
@@ -181,7 +201,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	public Cursor queryParticipants(long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
-		String sql = "SELECT * FROM participant p, conversation c WHERE p.conversation_id = c._id AND c._id = " + conversationId;
+		String sql = "SELECT p._id, p.identification, p.ip_address, p.state FROM participant p, conversation c WHERE p.conversation_id = c._id AND c._id = " + conversationId;
 //		Cursor c =  db.query(TABLE_NAME_PARTICIPANT, null, null, null, null, null,
 //				PARTICIPANT_IDENTIFICATION + " ASC");
 		

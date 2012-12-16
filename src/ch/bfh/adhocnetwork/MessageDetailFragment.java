@@ -30,7 +30,7 @@ public class MessageDetailFragment extends Fragment {
             Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_message_detail, container, false);
         if (mItem != null) {
-            ((TextView) rootView.findViewById(R.id.adhocnetwork_detail)).setText(mItem.content);
+            //((TextView) rootView.findViewById(R.id.adhocnetwork_detail)).setText(mItem.content);
         }
         return rootView;
     }

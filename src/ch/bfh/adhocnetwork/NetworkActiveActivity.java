@@ -1,20 +1,12 @@
 package ch.bfh.adhocnetwork;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
-import android.app.NotificationManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -22,8 +14,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
-import android.util.Base64;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -33,9 +23,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import ch.bfh.adhocnetwork.db.NetworkDbHelper;
-import ch.bfh.adhocnetwork.wifi.AdhocNetworkConfiguration;
-import ch.bfh.adhocnetwork.wifi.SerializableWifiConfiguration;
-import ch.bfh.adhocnetwork.wifi.WifiAPManager;
 
 public class NetworkActiveActivity extends FragmentActivity implements ActionBar.TabListener {
 

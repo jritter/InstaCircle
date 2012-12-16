@@ -208,12 +208,13 @@ public class NetworkService extends Service {
 			break;
 		case Message.MSG_MSGJOIN:
 			Log.d(TAG, "Join...");
-			dbHelper.insertParticipant(msg.getMessage());
+			dbHelper.insertParticipant(msg.getMessage(), msg.getSenderIPAddress());
 			Intent intent = new Intent("participantJoined");
 			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			break;
 		case Message.MSG_MSGLEAVE:
 			Log.d(TAG, "Leave...");
+			dbHelper.updateParticipantState(msg.getSender(), 0);
 			break;
 		case Message.MSG_MSGRESENDREQ:
 			// should be handled as unicast
