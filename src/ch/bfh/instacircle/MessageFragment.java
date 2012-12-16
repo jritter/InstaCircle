@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +10,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import ch.bfh.adhocnetwork.wifi.WifiAPManager;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.wifi.WifiAPManager;
 
 public class MessageFragment extends Fragment implements
 		MessageListFragment.Callbacks {

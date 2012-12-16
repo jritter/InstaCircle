@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork.wifi;
+package ch.bfh.instacircle.wifi;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -19,8 +19,8 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.util.Log;
-import ch.bfh.adhocnetwork.NetworkActiveActivity;
-import ch.bfh.adhocnetwork.service.NetworkService;
+import ch.bfh.instacircle.NetworkActiveActivity;
+import ch.bfh.instacircle.service.NetworkService;
 
 public class AdhocWiFiManager {
 	

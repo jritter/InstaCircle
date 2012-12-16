@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork.wifi;
+package ch.bfh.instacircle.wifi;
 
 import java.io.Serializable;
 import java.util.Arrays;

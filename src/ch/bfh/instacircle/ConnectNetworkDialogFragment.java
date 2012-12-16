@@ -1,5 +1,6 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
+import ch.bfh.instacircle.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;

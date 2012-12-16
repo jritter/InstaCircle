@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork.wifi;
+package ch.bfh.instacircle.wifi;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -18,7 +18,7 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
-import ch.bfh.adhocnetwork.service.NetworkService;
+import ch.bfh.instacircle.service.NetworkService;
 
 /**
  * Handle enabling and disabling of WiFi AP

@@ -1,5 +1,6 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
+import ch.bfh.instacircle.R;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.widget.CursorAdapter;

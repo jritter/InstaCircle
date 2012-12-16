@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,7 +11,8 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 
 public class MessageSendFragment extends Fragment implements OnClickListener {
 	

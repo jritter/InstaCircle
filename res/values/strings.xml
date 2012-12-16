@@ -1,8 +1,8 @@
 <resources>
 
-    <string name="app_name">Adhoc Network</string>
-    <string name="title_adhocnetwork_detail">Adhoc Network</string>
-    <string name="title_adhocnetwork_list">Adhoc Network</string>
+    <string name="app_name">InstaCircle</string>
+    <string name="title_adhocnetwork_detail">InstaCircle</string>
+    <string name="title_adhocnetwork_list">InstaCircle</string>
     <string name="enable_wifiap_button">Enable WiFi AP</string>
     <string name="hello_world">Hello world!</string>
     <string name="rescan">Rescan</string>

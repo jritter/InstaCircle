@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +32,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import ch.bfh.adhocnetwork.wifi.AdhocWiFiManager;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.wifi.AdhocWiFiManager;
 
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener, ConnectNetworkDialogFragment.NoticeDialogListener, TextWatcher{
 
@@ -260,7 +261,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	public boolean isServiceRunning(){
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-	        if ("ch.bfh.adhocnetwork.service.NetworkService".equals(service.service.getClassName())) {
+	        if ("ch.bfh.instacircle.service.NetworkService".equals(service.service.getClassName())) {
 	            return true;
 	        }
 	    }

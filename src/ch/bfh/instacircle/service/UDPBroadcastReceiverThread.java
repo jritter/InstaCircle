@@ -1,13 +1,11 @@
-package ch.bfh.adhocnetwork.service;
+package ch.bfh.instacircle.service;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -19,39 +17,37 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 import android.util.Log;
-import ch.bfh.adhocnetwork.Message;
+import ch.bfh.instacircle.Message;
 
-public class TCPUnicastReceiverThread extends Thread { 
+public class UDPBroadcastReceiverThread extends Thread { 
 	
-	private static final String TAG = TCPUnicastReceiverThread.class.getSimpleName();
-	public ServerSocket serverSocket;
+	private static final String TAG = UDPBroadcastReceiverThread.class.getSimpleName();
+	
+	public DatagramSocket socket;
 	
 	NetworkService service;
 	
-	public TCPUnicastReceiverThread(NetworkService service) {
+	public UDPBroadcastReceiverThread(NetworkService service) {
 		this.setName(TAG);
 		this.service = service;
 	}
 
 	public void run() {
-		Socket clientSocket;
 		Message msg;
-		InputStream in = null;
 		try {
-			serverSocket = new ServerSocket(12345);
+			socket = new DatagramSocket(12345);
+			socket.setBroadcast(true);
 			while (!Thread.currentThread().isInterrupted()) {
-				
+
 				try {
-					clientSocket = serverSocket.accept();
-					in = clientSocket.getInputStream();
-				    DataInputStream dis = new DataInputStream(in);
-				    int len = 1040;
-				    byte[] encryptedData = new byte[len];
-				    if (len > 0) {
-				        dis.readFully(encryptedData);
-				    }
-					
-					
+					DatagramPacket packet = new DatagramPacket(new byte[1040], 1040);
+					socket.receive(packet);
+	
+	
+	//				InetAddress address = packet.getAddress();
+	//				int port = packet.getPort();
+	//				int len = packet.getLength();
+					byte[] encryptedData = packet.getData();
 					Log.d(TAG, "LENGTH: " + encryptedData.length);
 					
 					byte[] data = decrypt("1234".getBytes(), encryptedData);
@@ -62,36 +58,29 @@ public class TCPUnicastReceiverThread extends Thread {
 					try {
 					  oin = new ObjectInputStream(bis);
 					  msg = (Message) oin.readObject(); 
-
+	
 					} finally {
 					  bis.close();
 					  oin.close();
 					}
 					
-					msg.setSenderIPAddress((clientSocket.getInetAddress()).getHostAddress());
+					if (!Thread.currentThread().isInterrupted()){
+						msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
+						service.processBroadcastMessage(msg);
+					}
 					
-					service.processUnicastMessage(msg);
 				}
 				catch (IOException e){
 					Log.d(TAG, "Terminating...");
-					serverSocket.close();
+					socket.close();
 					Thread.currentThread().interrupt();
 				}
-				
-				
-				
 				
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e){
 			e.printStackTrace();
-		} finally {
-			try {
-				in.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	

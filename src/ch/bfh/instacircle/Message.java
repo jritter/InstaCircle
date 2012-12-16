@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import java.io.Serializable;
 

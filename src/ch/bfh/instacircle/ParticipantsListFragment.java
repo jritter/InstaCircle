@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 
 import android.app.Activity;
@@ -12,7 +12,7 @@ import android.support.v4.app.ListFragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.ListView;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 
 public class ParticipantsListFragment extends ListFragment {
 

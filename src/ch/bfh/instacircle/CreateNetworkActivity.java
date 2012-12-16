@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -15,8 +15,9 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
-import ch.bfh.adhocnetwork.service.NetworkService;
-import ch.bfh.adhocnetwork.wifi.WifiAPManager;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.service.NetworkService;
+import ch.bfh.instacircle.wifi.WifiAPManager;
 
 public class CreateNetworkActivity extends Activity implements OnClickListener {
 	

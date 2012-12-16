@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork.service;
+package ch.bfh.instacircle.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -48,13 +48,13 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 import android.util.Log;
-import ch.bfh.adhocnetwork.MainActivity;
-import ch.bfh.adhocnetwork.Message;
-import ch.bfh.adhocnetwork.NetworkActiveActivity;
-import ch.bfh.adhocnetwork.R;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
-import ch.bfh.adhocnetwork.wifi.AdhocWiFiManager;
-import ch.bfh.adhocnetwork.wifi.WifiAPManager;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.MainActivity;
+import ch.bfh.instacircle.Message;
+import ch.bfh.instacircle.NetworkActiveActivity;
+import ch.bfh.instacircle.db.NetworkDbHelper;
+import ch.bfh.instacircle.wifi.AdhocWiFiManager;
+import ch.bfh.instacircle.wifi.WifiAPManager;
 
 public class NetworkService extends Service {
 

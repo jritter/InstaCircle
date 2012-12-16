@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork.db;
+package ch.bfh.instacircle.db;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
-import ch.bfh.adhocnetwork.Message;
+import ch.bfh.instacircle.Message;
 
 public class NetworkDbHelper extends SQLiteOpenHelper {
 

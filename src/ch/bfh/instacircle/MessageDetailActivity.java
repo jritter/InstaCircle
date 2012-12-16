@@ -1,5 +1,6 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
+import ch.bfh.instacircle.R;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;

@@ -1,7 +1,9 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import ch.bfh.instacircle.R;
 
 import android.content.Context;
 import android.database.Cursor;

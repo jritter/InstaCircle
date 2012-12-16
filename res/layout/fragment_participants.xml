@@ -9,7 +9,7 @@
 
     <fragment
         android:id="@+id/fragment_participants_list"
-        android:name="ch.bfh.adhocnetwork.ParticipantsListFragment"
+        android:name="ch.bfh.instacircle.ParticipantsListFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"

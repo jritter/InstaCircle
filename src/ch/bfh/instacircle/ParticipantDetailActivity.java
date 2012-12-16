@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import android.database.Cursor;
 import android.os.Bundle;
@@ -6,7 +6,8 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuItem;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 
 public class ParticipantDetailActivity extends FragmentActivity {
 	

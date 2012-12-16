@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 import android.database.Cursor;
 import android.os.Bundle;
@@ -8,7 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridLayout;
 import android.widget.TextView;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 
 public class ParticipantDetailFragment extends Fragment implements
 		ParticipantsListFragment.Callbacks {

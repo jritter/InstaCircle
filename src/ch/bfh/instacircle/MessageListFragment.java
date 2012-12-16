@@ -1,7 +1,7 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;

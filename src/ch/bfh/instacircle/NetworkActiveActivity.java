@@ -1,4 +1,4 @@
-package ch.bfh.adhocnetwork;
+package ch.bfh.instacircle;
 
 
 import android.app.ActionBar;
@@ -22,7 +22,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import ch.bfh.adhocnetwork.db.NetworkDbHelper;
+import ch.bfh.instacircle.R;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 
 public class NetworkActiveActivity extends FragmentActivity implements ActionBar.TabListener {
 
