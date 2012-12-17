@@ -45,9 +45,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	
 	private ArrayList<HashMap<String, Object>> arraylist = new ArrayList<HashMap<String, Object>>();
 	private Button btnCreateNetwork;
-	private String ITEM_DESCRIPTION = "description";
 
-	private String ITEM_OBJECT = "object";
 	private ListView lv;
 	
 	private SharedPreferences preferences;
@@ -118,7 +116,7 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		}
 
 		adapter = new SimpleAdapter(this, arraylist, R.layout.list_item_network,
-				new String[] { ITEM_DESCRIPTION }, new int[] { R.id.network_name });
+				new String[] { "SID", "capabilities" }, new int[] { R.id.content, R.id.description });
 		lv.setAdapter(adapter);
 		lv.setOnItemClickListener(this);
 
@@ -134,14 +132,11 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 					size = size - 1;
 					while (size >= 0) {
 						HashMap<String, Object> item = new HashMap<String, Object>();
-						item.put(ITEM_DESCRIPTION,
-								results.get(size).SSID + "  "
-										+ results.get(size).capabilities);
-						
-						item.put(ITEM_OBJECT, results.get(size));
+						item.put("SID",	results.get(size).SSID);
+						item.put("capabilities", results.get(size).capabilities);
+						item.put("object", results.get(size));
 
 						arraylist.add(item);
-						Log.d(TAG, (String) item.get(ITEM_DESCRIPTION));
 						size--;
 						adapter.notifyDataSetChanged();
 					}
@@ -220,13 +215,10 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		
 		HashMap<String, Object> hash = (HashMap<String, Object>) listview.getAdapter().getItem(arg2);
 		
-		selectedResult = (ScanResult) hash.get(ITEM_OBJECT);
+		selectedResult = (ScanResult) hash.get("object");
 		
 		DialogFragment dialog = new ConnectNetworkDialogFragment();
 		dialog.show(getFragmentManager(), TAG);
-		
-		//
-		
 	}
 	
 	@Override

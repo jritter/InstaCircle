@@ -3,6 +3,7 @@ package ch.bfh.instacircle;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ public class ParticipantDetailFragment extends Fragment implements
 	private TextView participantIdentification;
 	private TextView participantIpAddress;
 	private TextView participantStatus;
+	private TextView participantSequenceNumber;
 	
 	private int participantId;
 	private NetworkDbHelper dbHelper;
@@ -50,12 +52,13 @@ public class ParticipantDetailFragment extends Fragment implements
         
         participantId = getActivity().getIntent().getIntExtra("participant_id", -1);
         
+        
         layout = (GridLayout) getView().findViewById(R.id.participant_detail_layout);
         
         participantIdentification = (TextView) layout.findViewById(R.id.participant_identification);
         participantIpAddress = (TextView) layout.findViewById(R.id.participant_ip_address);
-        
         participantStatus = (TextView) layout.findViewById(R.id.participant_status);
+        participantSequenceNumber = (TextView) layout.findViewById(R.id.participant_sequence_number);
         
         
         Cursor participant = dbHelper.queryParticipant(participantId);
@@ -66,14 +69,19 @@ public class ParticipantDetailFragment extends Fragment implements
         
         switch (participant.getInt(participant.getColumnIndex("state"))){
         case 0:
+        	participantStatus.setTextColor(getActivity().getResources().getColor(android.R.color.holo_orange_light));
         	participantStatus.setText("inactive");
         	break;
         case 1:
+        	participantStatus.setTextColor(getActivity().getResources().getColor(android.R.color.holo_green_light));
         	participantStatus.setText("active");
         	break;
         default:
+        	participantStatus.setTextColor(getActivity().getResources().getColor(android.R.color.holo_red_light));
         	participantStatus.setText("unknown");
         	break;
         }
+        
+        participantSequenceNumber.setText("" + dbHelper.getCurrentParticipantSequenceNumber(participant.getString(participant.getColumnIndex("identification"))));
 	}
 }

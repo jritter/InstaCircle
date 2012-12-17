@@ -37,11 +37,23 @@ public class MessageCursorAdapter extends CursorAdapter {
         
         switch (messageType){
         case Message.MSG_CONTENT:
-        	description.setText("Message received from " + 
-    				cursor.getString(cursor.getColumnIndex("identification")) + ",\n" +
-    				sdf.format(date)
-    				);
-        	icon.setImageResource(R.drawable.glyphicons_120_message_full);
+        	
+        	if (cursor.getInt(cursor.getColumnIndex("sequence_number")) == -1){
+        		description.setText("Unicast message received from " + 
+	    				cursor.getString(cursor.getColumnIndex("identification")) + ",\n" +
+	    				sdf.format(date)
+	    				);
+	        	icon.setImageResource(R.drawable.glyphicons_120_message_full);
+	        	icon.setBackgroundColor(context.getResources().getColor(android.R.color.holo_purple));
+        	}
+        	else {
+	        	description.setText("Broadcast message received from " + 
+	    				cursor.getString(cursor.getColumnIndex("identification")) + ",\n" +
+	    				sdf.format(date)
+	    				);
+	        	icon.setImageResource(R.drawable.glyphicons_120_message_full);
+	        	icon.setBackgroundColor(context.getResources().getColor(android.R.color.holo_blue_light));
+        	}
         	break;
         case Message.MSG_MSGJOIN:
         	description.setText("Participant joined,\n" +
