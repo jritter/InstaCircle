@@ -27,5 +27,6 @@
     <string name="title_activity_participant_detail">Participant Detail</string>
     <string name="participant_details">PARTICIPANT DETAILS</string>
     <string name="send_message_to_participant">SEND MESSAGE TO PARTICIPANT</string>
+    <string name="write_nfc_tag">Write NFC Tag</string>
 
 </resources>

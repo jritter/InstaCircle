@@ -192,6 +192,8 @@ public class NetworkService extends Service {
 
 	public void processBroadcastMessage(Message msg) {
 		Log.d(TAG, "Broadcast Message received...");
+		String identification = getSharedPreferences(PREFS_NAME, 0)
+				.getString("identification", "N/A");
 		Intent intent;
 		if (!checkMessageConsistency()){
 			return;
@@ -211,8 +213,12 @@ public class NetworkService extends Service {
 		case Message.MSG_MSGLEAVE:
 			Log.d(TAG, "Leave...");
 			dbHelper.updateParticipantState(msg.getSender(), 0);
-			intent = new Intent("participantChangedState");
-			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+			
+			// Don't broadcast if I'm the one who left...
+			if (!msg.getSender().equals(identification)){
+				intent = new Intent("participantChangedState");
+				LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+			}
 			break;
 		case Message.MSG_MSGRESENDREQ:
 			// should be handled as unicast
@@ -230,8 +236,6 @@ public class NetworkService extends Service {
 			advertiseNetwork();
 			break;
 		case Message.MSG_WHOISTHERE:
-			String identification = getSharedPreferences(PREFS_NAME, 0)
-			.getString("identification", "N/A");
 			Message response = new Message((dbHelper.getNextSequenceNumber() - 1) + "", Message.MSG_IAMHERE, identification, -1, networkUUID);
 			new UnicastMessageAsyncTask(msg.getSenderIPAddress()).execute(response);
 			break;
@@ -268,9 +272,6 @@ public class NetworkService extends Service {
 				}
 			}
 		}
-		
-		
-		String identification = getSharedPreferences(PREFS_NAME, 0).getString("identification", "N/A");
 		
 		// Stop everything as soon as the own leave message has been processed
 		if (msg.getMessageType() == Message.MSG_MSGLEAVE && msg.getSender().equals(identification)){

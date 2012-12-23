@@ -6,17 +6,28 @@ import java.util.List;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.DialogFragment;
+import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentFilter.MalformedMimeTypeException;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -32,7 +43,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import ch.bfh.instacircle.R;
 import ch.bfh.instacircle.wifi.AdhocWiFiManager;
 
 public class MainActivity extends Activity implements OnClickListener, OnItemClickListener, ConnectNetworkDialogFragment.NoticeDialogListener, TextWatcher{
@@ -60,6 +70,11 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	private WifiManager wifi;
 	
 	private BroadcastReceiver wifibroadcastreceiver;
+	private NfcAdapter nfcAdapter;
+	private PendingIntent pendingIntent;
+	private IntentFilter nfcIntentFilter;
+	private IntentFilter[] intentFiltersArray;
+	private boolean nfcAvailable;
 
 	public void afterTextChanged(Editable s) {
 		SharedPreferences.Editor editor = preferences.edit();
@@ -148,7 +163,31 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 		};
 		
 		registerReceiver(wifibroadcastreceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-
+		
+		// NFC stuff
+		
+		nfcAvailable = this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC);
+		
+		if (nfcAvailable){
+			nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+			
+			if (nfcAdapter.isEnabled()){
+				pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+				
+				nfcIntentFilter = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+			    try {
+			        nfcIntentFilter.addDataType("text/plain");
+			    }
+			    catch (MalformedMimeTypeException e) {
+			        throw new RuntimeException("fail", e);
+			    }
+			    intentFiltersArray = new IntentFilter[] {nfcIntentFilter};
+			}
+			else {
+				nfcAvailable = false;
+			}
+			
+		}
 	}
 
 	@Override
@@ -163,11 +202,42 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 
 		switch (item.getItemId()) {
 		case R.id.capture_qrcode:
+			
 			wifi.startScan();
-			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-	        intent.setPackage("com.google.zxing.client.android");
-	        intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-	        startActivityForResult(intent, 0);
+			try {
+				Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+		        intent.setPackage("com.google.zxing.client.android");
+		        intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+		        startActivityForResult(intent, 0);
+			} catch (ActivityNotFoundException e){
+				AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+				alertDialog.setTitle("InstaCircle - Barcode Scanner Required");
+				alertDialog
+						.setMessage("In order to use this feature, the Application \"Barcode Scanner\" must be installed. Install now?");
+				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+									int which) {
+								dialog.dismiss();
+								try {
+									startActivity(new Intent(
+											Intent.ACTION_VIEW,
+											Uri.parse("market://details?id=com.google.zxing.client.android")));
+								} catch (Exception e) {
+									Log.d(TAG,
+											"Unable to find market. User will have to install ZXing himself");
+								}
+							}
+						});
+				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog,
+									int which) {
+								dialog.dismiss();
+							}
+						});
+				alertDialog.show();
+			}
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -259,4 +329,56 @@ public class MainActivity extends Activity implements OnClickListener, OnItemCli
 	    }
 	    return false;
      }
+	
+	// Handle the NFC part...
+	@Override
+    public void onNewIntent(Intent intent) {
+
+		Parcelable[] rawMsgs = intent
+				.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+
+		NdefMessage msg = (NdefMessage) rawMsgs[0];
+		NdefRecord record = msg.getRecords()[0];
+		byte [] payload = record.getPayload();
+		int langLength = Integer.valueOf(payload[0]);
+		int textLength = payload.length - langLength - 1;
+		
+		byte [] langBytes = new byte [langLength];
+		byte [] textBytes = new byte [textLength];
+		System.arraycopy(payload, 1, langBytes, 0, langLength);
+		System.arraycopy(payload, 1 + langLength, textBytes, 0, textLength);
+		
+		String [] config = new String(textBytes).split("\\|\\|");
+        Log.d(TAG, "Extracted SSID from NFC Tag: " + config[0]);
+        Log.d(TAG, "Extracted Password from NFC Tag: " + config[1]);
+        
+        
+        SharedPreferences.Editor editor = preferences.edit();
+		editor.putString("SSID", config[0]);
+		editor.putString("password", config[1]);
+		editor.commit();
+		adhoc.connectToNetwork(config[0], config[1], this);
+    }
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (nfcAvailable){
+			nfcAdapter.disableForegroundDispatch(this);
+		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		if (nfcAdapter != null && nfcAdapter.isEnabled()){
+			nfcAvailable = true;
+		}
+		
+		if (nfcAvailable){
+			nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
+		}
+		
+	}
 }
