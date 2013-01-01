@@ -2,20 +2,29 @@ package ch.bfh.instacircle;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 
 import android.app.ActionBar;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.IntentFilter.MalformedMimeTypeException;
 import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -38,7 +47,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 import ch.bfh.instacircle.db.NetworkDbHelper;
+import ch.bfh.instacircle.service.NetworkService;
+import ch.bfh.instacircle.wifi.AdhocWifiManager;
+import ch.bfh.instacircle.wifi.WifiAPManager;
 
 public class NetworkActiveActivity extends FragmentActivity implements
 		ActionBar.TabListener {
@@ -62,6 +75,10 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	 */
 	ViewPager mViewPager;
 
+	private WifiManager wifi;
+	private AdhocWifiManager adhoc;
+	private WifiAPManager wifiapmanager;
+	
 	private NfcAdapter nfcAdapter;
 	private PendingIntent pendingIntent;
 	private IntentFilter nfcIntentFilter;
@@ -71,6 +88,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 
 	private boolean nfcAvailable;
 	private boolean writeNfcEnabled;
+	
+	private boolean repairInitiated;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -103,6 +122,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 						actionBar.setSelectedNavigationItem(position);
 					}
 				});
+		
+		this.registerReceiver(wifiReceiver,new IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION));
 
 		// For each of the sections in the app, add a tab to the action bar.
 		for (int i = 0; i < mSectionsPagerAdapter.getCount(); i++) {
@@ -115,6 +136,11 @@ public class NetworkActiveActivity extends FragmentActivity implements
 					.setText(mSectionsPagerAdapter.getPageTitle(i))
 					.setTabListener(this));
 		}
+		
+		// Handle the change of the Wifi configuration
+		wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		adhoc = new AdhocWifiManager(wifi);
+		wifiapmanager = new WifiAPManager();
 
 		// NFC stuff
 
@@ -126,12 +152,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 				pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this,
 						getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
 		
-				nfcIntentFilter = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
-				try {
-					nfcIntentFilter.addDataType("text/plain");
-				} catch (MalformedMimeTypeException e) {
-					throw new RuntimeException("fail", e);
-				}
+				nfcIntentFilter = new IntentFilter();
+				nfcIntentFilter.addAction(NfcAdapter.ACTION_NDEF_DISCOVERED);
+				nfcIntentFilter.addAction(NfcAdapter.ACTION_TAG_DISCOVERED);
 				intentFiltersArray = new IntentFilter[] { nfcIntentFilter };
 			}
 			else {
@@ -206,23 +229,35 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			builder.setPositiveButton("Yes",
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
-							String identification = getSharedPreferences(
-									PREFS_NAME, 0).getString("identification",
-									"N/A");
-							String networkUUID = getSharedPreferences(
-									PREFS_NAME, 0).getString("networkUUID",
-									"N/A");
-							Message message = new Message(identification,
-									Message.MSG_MSGLEAVE, identification,
-									new NetworkDbHelper(
-											NetworkActiveActivity.this)
-											.getNextSequenceNumber(),
-									networkUUID);
-							Intent intent = new Intent("messageSend");
-							intent.putExtra("message", message);
-							LocalBroadcastManager.getInstance(
-									NetworkActiveActivity.this).sendBroadcast(
-									intent);
+							
+							if (isServiceRunning()){
+								String identification = getSharedPreferences(
+										PREFS_NAME, 0).getString("identification",
+										"N/A");
+								String networkUUID = getSharedPreferences(
+										PREFS_NAME, 0).getString("networkUUID",
+										"N/A");
+								Message message = new Message(identification,
+										Message.MSG_MSGLEAVE, identification,
+										new NetworkDbHelper(
+												NetworkActiveActivity.this)
+												.getNextSequenceNumber(),
+										networkUUID);
+								Intent intent = new Intent("messageSend");
+								intent.putExtra("message", message);
+								LocalBroadcastManager.getInstance(
+										NetworkActiveActivity.this).sendBroadcast(
+										intent);
+							}
+							else {
+								new NetworkDbHelper(NetworkActiveActivity.this).closeConversation();
+								NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+								notificationManager.cancelAll();
+								Intent intent = new Intent(NetworkActiveActivity.this, MainActivity.class);
+								intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+								intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+								startActivity(intent);
+							}
 						}
 					});
 			builder.setNegativeButton("No",
@@ -298,31 +333,25 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	 */
 	public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
+		private ArrayList<Fragment> fragments; 
+		
 		public SectionsPagerAdapter(FragmentManager fm) {
 			super(fm);
+			
+			fragments = new ArrayList<Fragment>();
+			fragments.add(new MessageFragment());
+			fragments.add(new ParticipantsFragment());
+			fragments.add(new NetworkInfoFragment());
 		}
 
 		@Override
 		public Fragment getItem(int i) {
-			Fragment fragment = null;
-			switch (i) {
-			case 0:
-				fragment = new MessageFragment();
-				break;
-			case 1:
-				// fragment = new DummySectionFragment();
-				// Bundle args = new Bundle();
-				// args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, i + 1);
-				// fragment.setArguments(args);
-				fragment = new ParticipantsFragment();
-				break;
-			}
-			return fragment;
+			return fragments.get(i);
 		}
 
 		@Override
 		public int getCount() {
-			return 2;
+			return 3;
 		}
 
 		@Override
@@ -332,6 +361,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 				return getString(R.string.tab_title_messages).toUpperCase();
 			case 1:
 				return getString(R.string.tab_title_participants).toUpperCase();
+			case 2:
+				return getString(R.string.tab_title_network_info).toUpperCase();
 			}
 			return null;
 		}
@@ -366,30 +397,33 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 			String text = preferences.getString("SSID", "N/A")
 					+ "||" + preferences.getString("password", "N/A");
-			String lang = "en";
-			byte[] textBytes = text.getBytes();
-			byte[] langBytes = null;
-			try {
-				langBytes = lang.getBytes("US-ASCII");
-			} catch (UnsupportedEncodingException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			int langLength = langBytes.length;
-			int textLength = textBytes.length;
-			byte[] payload = new byte[1 + langLength + textLength];
+//			String lang = "en";
+//			byte[] textBytes = text.getBytes();
+//			byte[] langBytes = null;
+//			try {
+//				langBytes = lang.getBytes("US-ASCII");
+//			} catch (UnsupportedEncodingException e1) {
+//				e1.printStackTrace();
+//			}
+//			int langLength = langBytes.length;
+//			int textLength = textBytes.length;
+//			byte[] payload = new byte[1 + langLength + textLength];
+//
+//			// set status byte (see NDEF spec for actual bits)
+//			payload[0] = (byte) langLength;
+//
+//			// copy langbytes and textbytes into payload
+//			System.arraycopy(langBytes, 0, payload, 1, langLength);
+//			System.arraycopy(textBytes, 0, payload, 1 + langLength, textLength);
+//
+//			NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN,
+//					NdefRecord.RTD_TEXT, new byte[0], payload);
+			
+			NdefRecord record = createMimeRecord("application/ch.bfh.instacircle", text.getBytes());
+			
+			NdefRecord aar = NdefRecord.createApplicationRecord(getPackageName());
 
-			// set status byte (see NDEF spec for actual bits)
-			payload[0] = (byte) langLength;
-
-			// copy langbytes and textbytes into payload
-			System.arraycopy(langBytes, 0, payload, 1, langLength);
-			System.arraycopy(textBytes, 0, payload, 1 + langLength, textLength);
-
-			NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN,
-					NdefRecord.RTD_TEXT, new byte[0], payload);
-
-			NdefMessage message = new NdefMessage(new NdefRecord[] { record });
+			NdefMessage message = new NdefMessage(new NdefRecord[] { record, aar });
 
 			Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
@@ -407,6 +441,14 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			nfcAdapter.disableForegroundDispatch(this);
 		}
 	}
+	
+	
+	@Override
+	protected void onDestroy()
+	{
+	    super.onDestroy();
+	    unregisterReceiver(wifiReceiver);
+	}
 
 	@Override
 	protected void onResume() {
@@ -418,8 +460,11 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 		
 		if (nfcAvailable){
+			Log.d(TAG, "Enabling foreground Dispatching...");
 			nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
 		}
+		
+		checkNetworkState();
 
 	}
 	
@@ -486,5 +531,94 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		alertDialog.setMessage("NFC Tag written successfully.");
 		alertDialog.show();
 		return true;
+	}
+	
+	
+	private BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
+	
+		@Override
+	    public void onReceive(Context context, Intent intent) {
+	        checkNetworkState();
+	        Log.d(TAG, "State: " +  intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN));
+	    }
+	};
+	
+	public void checkNetworkState() {
+		ConnectivityManager conn = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+		SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
+		final String configuredSsid = preferences.getString("SSID", "N/A");
+		final String password = preferences.getString("password", "N/A");
+		
+		NetworkInfo nInfo = conn.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		String ssid = wifi.getConnectionInfo().getSSID();
+		Log.d(TAG, "Currently active SSID: " + ssid);
+		// Only check the state if this device is not an access point
+		if (!wifiapmanager.isWifiAPEnabled(wifi)){
+			if (!(nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED && nInfo.getState() == NetworkInfo.State.CONNECTED && ssid.equals(configuredSsid))){
+				if (repairInitiated == false){
+					repairInitiated = true;
+					AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+					alertDialog.setTitle("InstaCircle - Network Connection Lost");
+					alertDialog
+							.setMessage("The connection to the network " + configuredSsid + " has been lost. Try to repair?");
+					alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Repair",
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int which) {
+									dialog.dismiss();
+									adhoc.connectToNetwork(configuredSsid, password, NetworkActiveActivity.this, false);
+								}
+							});
+					alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Leave",
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int which) {
+									dialog.dismiss();
+									WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+									new AdhocWifiManager(wifiman).restoreWifiConfiguration(getBaseContext());
+									new WifiAPManager().disableHotspot(wifiman, getBaseContext());
+									NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+									notificationManager.cancelAll();
+									Intent stopIntent = new Intent(NetworkActiveActivity.this, NetworkService.class);
+									stopService(stopIntent);
+									Intent intent = new Intent(NetworkActiveActivity.this, MainActivity.class);
+									intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+									intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+									startActivity(intent);
+								}
+							});
+					alertDialog.show();
+				}
+			}
+			else {
+				Log.d(TAG, "All good! :-)");
+				repairInitiated = false;
+			}
+		}
+		
+	}
+	
+	/**
+     * Creates a custom MIME type encapsulated in an NDEF record
+     *
+     * @param mimeType
+     */
+    public NdefRecord createMimeRecord(String mimeType, byte[] payload) {
+        byte[] mimeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
+        NdefRecord mimeRecord = new NdefRecord(
+                NdefRecord.TNF_MIME_MEDIA, mimeBytes, new byte[0], payload);
+        return mimeRecord;
+    }
+    
+    public boolean isServiceRunning() {
+		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+		for (RunningServiceInfo service : manager
+				.getRunningServices(Integer.MAX_VALUE)) {
+			if ("ch.bfh.instacircle.service.NetworkService"
+					.equals(service.service.getClassName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

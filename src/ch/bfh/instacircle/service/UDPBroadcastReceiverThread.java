@@ -22,14 +22,16 @@ import ch.bfh.instacircle.Message;
 public class UDPBroadcastReceiverThread extends Thread { 
 	
 	private static final String TAG = UDPBroadcastReceiverThread.class.getSimpleName();
-	
 	public DatagramSocket socket;
 	
 	NetworkService service;
 	
-	public UDPBroadcastReceiverThread(NetworkService service) {
+	private String cipherKey;
+	
+	public UDPBroadcastReceiverThread(NetworkService service, String cipherKey) {
 		this.setName(TAG);
 		this.service = service;
+		this.cipherKey = cipherKey;
 	}
 
 	public void run() {
@@ -50,23 +52,25 @@ public class UDPBroadcastReceiverThread extends Thread {
 					byte[] encryptedData = packet.getData();
 					Log.d(TAG, "LENGTH: " + encryptedData.length);
 					
-					byte[] data = decrypt("1234".getBytes(), encryptedData);
+					byte[] data = decrypt(cipherKey.getBytes(), encryptedData);
 					
+					if (data != null){
 					
-					ByteArrayInputStream bis = new ByteArrayInputStream(data);
-					ObjectInput oin = null;
-					try {
-					  oin = new ObjectInputStream(bis);
-					  msg = (Message) oin.readObject(); 
-	
-					} finally {
-					  bis.close();
-					  oin.close();
-					}
-					
-					if (!Thread.currentThread().isInterrupted()){
-						msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
-						service.processBroadcastMessage(msg);
+						ByteArrayInputStream bis = new ByteArrayInputStream(data);
+						ObjectInput oin = null;
+						try {
+						  oin = new ObjectInputStream(bis);
+						  msg = (Message) oin.readObject(); 
+		
+						} finally {
+						  bis.close();
+						  oin.close();
+						}
+						
+						if (!Thread.currentThread().isInterrupted()){
+							msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
+							service.processBroadcastMessage(msg);
+						}
 					}
 					
 				}
@@ -108,8 +112,7 @@ public class UDPBroadcastReceiverThread extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		}
 		return decrypted;
 	}

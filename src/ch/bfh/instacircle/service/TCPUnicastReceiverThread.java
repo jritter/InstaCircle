@@ -26,11 +26,16 @@ public class TCPUnicastReceiverThread extends Thread {
 	private static final String TAG = TCPUnicastReceiverThread.class.getSimpleName();
 	public ServerSocket serverSocket;
 	
+	private static final String PREFS_NAME = "network_preferences";
+	
 	NetworkService service;
 	
-	public TCPUnicastReceiverThread(NetworkService service) {
+	private String cipherKey;
+	
+	public TCPUnicastReceiverThread(NetworkService service, String cipherKey) {
 		this.setName(TAG);
 		this.service = service;
+		this.cipherKey = cipherKey;
 	}
 
 	public void run() {
@@ -54,7 +59,7 @@ public class TCPUnicastReceiverThread extends Thread {
 					
 					Log.d(TAG, "LENGTH: " + encryptedData.length);
 					
-					byte[] data = decrypt("1234".getBytes(), encryptedData);
+					byte[] data = decrypt(cipherKey.getBytes(), encryptedData);
 					
 					
 					ByteArrayInputStream bis = new ByteArrayInputStream(data);

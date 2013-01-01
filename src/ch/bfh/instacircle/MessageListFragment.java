@@ -104,6 +104,12 @@ public class MessageListFragment extends ListFragment {
 			mca.changeCursor(helper.queryMessages());
 		}
 	};
+
+	@Override
+	public void onDestroyView() {
+		// TODO Auto-generated method stub
+		super.onDestroyView();
+	}
 	
 	
 	

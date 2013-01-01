@@ -1,15 +1,11 @@
 package ch.bfh.instacircle;
 
-import ch.bfh.instacircle.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
-import android.database.Cursor;
-import android.net.wifi.ScanResult;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -33,13 +29,18 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 	// Use this instance of the interface to deliver action events
 	NoticeDialogListener mListener;
 
-	private EditText txtIdentification;
 	private EditText txtPassword;
+	private EditText txtNetworkKey;
 
-	private String identification;
 	private String password;
+	private String networkKey;
 	
-	private ScanResult result;
+	private boolean showNetworkKeyField;
+	
+	public ConnectNetworkDialogFragment(boolean showNetworkKeyField){
+		this.showNetworkKeyField = showNetworkKeyField;
+	}
+	
 	
 	
 	@Override
@@ -51,11 +52,13 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 
 		View view = inflater.inflate(R.layout.dialog_join_network, null);
 
-		txtIdentification = (EditText) view.findViewById(R.id.identification);
 		txtPassword = (EditText) view.findViewById(R.id.password);
+		txtNetworkKey = (EditText) view.findViewById(R.id.networkkey);
 		
-		txtIdentification.setText(getActivity().getSharedPreferences(PREFS_NAME, 0).getString("identification", readOwnerName()));
-
+		if (!showNetworkKeyField){
+			txtNetworkKey.setVisibility(View.INVISIBLE);
+		}
+		
 		// Inflate and set the layout for the dialog
 		// Pass null as the parent view because its going in the dialog layout
 		builder.setView(view);
@@ -63,8 +66,8 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 		builder.setPositiveButton(R.string.join,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
-						identification = txtIdentification.getText().toString();
 						password = txtPassword.getText().toString();
+						networkKey = txtNetworkKey.getText().toString();
 						mListener
 								.onDialogPositiveClick(ConnectNetworkDialogFragment.this);
 					}
@@ -72,8 +75,8 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 		builder.setNegativeButton(R.string.cancel,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int id) {
-						identification = txtIdentification.getText().toString();
 						password = txtPassword.getText().toString();
+						networkKey = txtNetworkKey.getText().toString();
 						mListener
 								.onDialogNegativeClick(ConnectNetworkDialogFragment.this);
 					}
@@ -97,30 +100,12 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 		}
 	}
 
-	public String getIdentification() {
-		return identification;
-	}
-
 	public String getPassword() {
 		return password;
 	}
 	
-	public ScanResult getScanResult() {
-		return result;
+	public String getNetworkKey() {
+		return networkKey;
 	}
 	
-	public String readOwnerName () {
-		
-		Cursor c = getActivity().getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
-		if (c.getCount() == 0){
-			return "";
-		}
-		c.moveToFirst();
-		String displayName = c.getString(c.getColumnIndex("display_name"));
-		c.close();
-		
-		return displayName;
-		
-	}
-
 }

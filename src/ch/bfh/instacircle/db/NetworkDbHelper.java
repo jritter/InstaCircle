@@ -16,7 +16,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	// Basic DB parameters
 	private static final String DATABASE_NAME = "network.db";
-	private static final int DATABASE_VERSION = 6;
+	private static final int DATABASE_VERSION = 8;
 
 	// Table names
 	private static final String TABLE_NAME_MESSAGE = "message";
@@ -239,13 +239,25 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		
 		closeConversation();
 		
-		SQLiteDatabase db = getWritableDatabase();
-		ContentValues values = new ContentValues();
-		values.put(CONVERSATION_KEY, key);
-		values.put(CONVERSATION_UUID, UUID);
-		values.put(CONVERSATION_START, System.currentTimeMillis());
-		values.put(CONVERSATION_OPEN, 1);
-		rowId = db.insert(TABLE_NAME_CONVERSATION, null, values);
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE " + CONVERSATION_UUID + " = '" + UUID + "'";
+		Cursor c = db.rawQuery(query, null);
+		if (c.getCount() == 0){
+			db = getWritableDatabase();
+			ContentValues values = new ContentValues();
+			values.put(CONVERSATION_KEY, key);
+			values.put(CONVERSATION_UUID, UUID);
+			values.put(CONVERSATION_START, System.currentTimeMillis());
+			values.put(CONVERSATION_OPEN, 1);
+			rowId = db.insert(TABLE_NAME_CONVERSATION, null, values);
+		}
+		else {
+			c.moveToLast();
+			rowId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+			ContentValues values = new ContentValues();
+			values.put(CONVERSATION_OPEN, 1);
+			db.update(TABLE_NAME_CONVERSATION, values, CONVERSATION_ID + " = " + rowId, null);
+		}
 		
 		return rowId;
 	}
@@ -263,9 +275,14 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		SQLiteDatabase db = getReadableDatabase();
 		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE " + CONVERSATION_OPEN + " = 1";
 		Cursor c = db.rawQuery(query, null);
-		c.moveToFirst();
-		long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
-		return conversationId;
+		if (c.getCount() == 0){
+			return -1;
+		}
+		else {
+			c.moveToFirst();
+			long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+			return conversationId;
+		}
 	}
 	
 	public String getOpenConversationUUID(){
@@ -294,6 +311,24 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		Log.d(TAG, "New Sequence number: " + nextSequenceNumber);
 		c.close();
 		return nextSequenceNumber;
+	}
+	
+	public String getCipherKey(long conversationId){
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "select " + CONVERSATION_KEY + " from "
+				+ TABLE_NAME_CONVERSATION + " where "
+				+ CONVERSATION_ID + " = " + conversationId;
+		
+		Cursor c = db.rawQuery(query, null);
+		c.moveToFirst();
+		String key = c.getString(0);
+		c.close();
+		return key;
+		
+	}
+	
+	public String getCipherKey(){
+		return getCipherKey(getOpenConversationId());
 	}
 	
 	public int getCurrentParticipantSequenceNumber(String identification){

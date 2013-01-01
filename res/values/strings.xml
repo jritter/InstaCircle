@@ -16,6 +16,7 @@
     <string name="create_network">Create Network</string>
     <string name="tab_title_messages">Messages</string>
     <string name="tab_title_participants">Participants</string>
+    <string name="tab_title_network_info">Network Info</string>
     <string name="identification">Your Identification</string>
     <string name="password">Password</string>
     <string name="cancel">Cancel</string>
@@ -24,6 +25,7 @@
     <string name="leave_network">Leave network</string>
     <string name="display_qrcode">Display QR Code</string>
     <string name="capture_qrcode">Capture QR Code</string>
+    <string name="rescan_wifi">Rescan Wifi</string>
     <string name="title_activity_participant_detail">Participant Detail</string>
     <string name="participant_details">PARTICIPANT DETAILS</string>
     <string name="send_message_to_participant">SEND MESSAGE TO PARTICIPANT</string>

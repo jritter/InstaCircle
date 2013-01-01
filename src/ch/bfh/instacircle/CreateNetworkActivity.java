@@ -1,14 +1,19 @@
 package ch.bfh.instacircle;
 
+import java.util.UUID;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,7 +24,7 @@ import ch.bfh.instacircle.R;
 import ch.bfh.instacircle.service.NetworkService;
 import ch.bfh.instacircle.wifi.WifiAPManager;
 
-public class CreateNetworkActivity extends Activity implements OnClickListener {
+public class CreateNetworkActivity extends Activity implements OnClickListener, TextWatcher {
 	
 	private static final String TAG = CreateNetworkActivity.class.getSimpleName();
 
@@ -47,9 +52,16 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
         wifiapman = new WifiAPManager();
 		wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		
+		
+		
 		WifiConfiguration config = wifiapman.getWifiApConfiguration(wifiman);
 		txtNetworkName.setText(config.SSID);
+		txtNetworkPIN.addTextChangedListener(this);
 		txtNetworkPIN.setText(config.preSharedKey);
+		
+		if (config.preSharedKey == null || config.preSharedKey.length() < 8){
+			txtNetworkPIN.setText(UUID.randomUUID().toString().substring(0, 8));
+		}
 		
 		if (wifiapman.isWifiAPEnabled(wifiman)){
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -77,6 +89,13 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 					});
 			AlertDialog dialog = builder.create();
 			dialog.show();
+		}
+		
+		if (txtNetworkPIN.getText().toString().length() < 8){
+			btnCreateNetwork.setEnabled(false);
+		}
+		else {
+			btnCreateNetwork.setEnabled(true);
 		}
     }
 
@@ -121,5 +140,24 @@ public class CreateNetworkActivity extends Activity implements OnClickListener {
 			
 	    	wifiapman.enableHotspot(wifiman, wificonfig, this);
 		}
+	}
+
+
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+	}
+	
+	public void afterTextChanged(Editable s) {
+		if (txtNetworkPIN.getText().toString().length() < 8){
+			btnCreateNetwork.setEnabled(false);
+		}
+		else {
+			btnCreateNetwork.setEnabled(true);
+		}
+	}
+
+	public void beforeTextChanged(CharSequence s, int start, int count,
+			int after) {
+
 	}
 }

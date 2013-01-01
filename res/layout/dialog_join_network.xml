@@ -2,23 +2,20 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical" >
-
+    
     <EditText
-        android:id="@+id/identification"
+        android:id="@+id/password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
         android:layout_marginTop="16dp"
-        android:hint="@string/identification"
-        android:inputType="text" >
-
-        <requestFocus />
-    </EditText>
+        android:hint="@string/password"
+        android:inputType="textPassword" />
     
     <EditText
-        android:id="@+id/password"
+        android:id="@+id/networkkey"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"

@@ -53,7 +53,7 @@ import ch.bfh.instacircle.MainActivity;
 import ch.bfh.instacircle.Message;
 import ch.bfh.instacircle.NetworkActiveActivity;
 import ch.bfh.instacircle.db.NetworkDbHelper;
-import ch.bfh.instacircle.wifi.AdhocWiFiManager;
+import ch.bfh.instacircle.wifi.AdhocWifiManager;
 import ch.bfh.instacircle.wifi.WifiAPManager;
 
 public class NetworkService extends Service {
@@ -77,6 +77,8 @@ public class NetworkService extends Service {
 	
 	private UDPBroadcastReceiverThread udpBroadcastReceiverThread;
 	private TCPUnicastReceiverThread tcpUnicastReceiverThread;
+	
+	private String cipherKey;
 
 	public NetworkService() {
 		
@@ -90,7 +92,6 @@ public class NetworkService extends Service {
 
 	@Override
 	public void onCreate() {
-
 	}
 	
 	@Override
@@ -103,7 +104,17 @@ public class NetworkService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {		
 		dbHelper = new NetworkDbHelper(this);
-		PendingIntent pIntent = PendingIntent.getActivity(this, 0, new Intent(this, NetworkActiveActivity.class), 0);
+		
+		Intent myIntent = new Intent(this, NetworkActiveActivity.class);
+		myIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		myIntent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+		PendingIntent pIntent = PendingIntent.getActivity(this, 0, myIntent, myIntent.getFlags());
+		
+		
+		cipherKey = getSharedPreferences(PREFS_NAME, 0).getString("password", "N/A");
+		
+		Log.d(TAG, "Using the cipher key " + cipherKey);
 		
 		Notification.Builder notificationBuilder = new Notification.Builder(this);
 		notificationBuilder.setContentTitle("Adhoc Network Chat");
@@ -117,10 +128,10 @@ public class NetworkService extends Service {
 		
 		notificationManager.notify(TAG, 1, notification);
 
-		udpBroadcastReceiverThread = new UDPBroadcastReceiverThread(this);
+		udpBroadcastReceiverThread = new UDPBroadcastReceiverThread(this, cipherKey);
 		udpBroadcastReceiverThread.start();
 		
-		tcpUnicastReceiverThread = new TCPUnicastReceiverThread(this);
+		tcpUnicastReceiverThread = new TCPUnicastReceiverThread(this, cipherKey);
 		tcpUnicastReceiverThread.start();
 		
 		
@@ -150,8 +161,6 @@ public class NetworkService extends Service {
 			createNetwork();
 			
 		} else if (intent.getStringExtra("action") != null && intent.getStringExtra("action").equals("joinnetwork")) {
-			
-			
 			// I want to join to an existing network
 			networkUUID = null;
 			
@@ -160,30 +169,37 @@ public class NetworkService extends Service {
 			
 			// Wait for a response
 			int i = 0;
-			while (i < 10){
+			while (i < 5){
 				if (advertisementArrived){
 					break;
 				}
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 				i++;
 			}
 			
-			networkUUID = (String) availableNetworks.toArray()[0];
-			dbHelper.openConversation("testtest", networkUUID);
-			joinNetwork(networkUUID,
-					getSharedPreferences(PREFS_NAME, 0)
-							.getString("identification", "N/A"));
-			
+			if (advertisementArrived){
+				networkUUID = (String) availableNetworks.toArray()[0];
+				dbHelper.openConversation(getSharedPreferences(PREFS_NAME, 0)
+						.getString("password", "N/A"), networkUUID);
+				joinNetwork(networkUUID,
+						getSharedPreferences(PREFS_NAME, 0)
+								.getString("identification", "N/A"));
+			}
+			else {
+				Log.d(TAG, "No network discovered, creating one...");
+				createNetwork();
+			}
 			Log.d(TAG, "connected to network " + networkUUID);
 		}
 		
 		intent = new Intent(this, NetworkActiveActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		intent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
 		startActivity(intent);
 		return super.onStartCommand(intent, flags, startId);
 	}
@@ -232,8 +248,11 @@ public class NetworkService extends Service {
 			advertisementArrived = true;
 			break;
 		case Message.MSG_DISCOVERNETS:
-			Log.d(TAG, "got discovernetwork, advertising...");
-			advertiseNetwork();
+			// only advertise if we have an open network...
+			if (dbHelper.getOpenConversationId() != -1) {
+				Log.d(TAG, "got discovernetwork, advertising...");
+				advertiseNetwork();
+			}
 			break;
 		case Message.MSG_WHOISTHERE:
 			Message response = new Message((dbHelper.getNextSequenceNumber() - 1) + "", Message.MSG_IAMHERE, identification, -1, networkUUID);
@@ -286,7 +305,7 @@ public class NetworkService extends Service {
 			
 			dbHelper.closeConversation();
 			WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-			new AdhocWiFiManager(wifiman).restoreWifiConfiguration(getBaseContext());
+			new AdhocWifiManager(wifiman).restoreWifiConfiguration(getBaseContext());
 			new WifiAPManager().disableHotspot(wifiman, getBaseContext());
 			stopSelf();
 			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -295,7 +314,6 @@ public class NetworkService extends Service {
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 			startActivity(intent);
-			
 		}
 		else {
 			
@@ -428,7 +446,7 @@ public class NetworkService extends Service {
 				ObjectOutput out = new ObjectOutputStream(bos);
 				out.writeObject(msg[0]);
 				byte[] bytes = bos.toByteArray();
-				byte[] encryptedBytes = encrypt("1234".getBytes(), bytes);
+				byte[] encryptedBytes = encrypt(cipherKey.getBytes(), bytes);
 				s = new DatagramSocket();
 				s.setBroadcast(true);
 				s.setReuseAddress(true);
@@ -467,7 +485,7 @@ public class NetworkService extends Service {
 				ObjectOutput out = new ObjectOutputStream(bos);
 				out.writeObject(msg[0]);
 				byte[] bytes = bos.toByteArray();
-				byte[] encryptedBytes = encrypt("1234".getBytes(), bytes);
+				byte[] encryptedBytes = encrypt(cipherKey.getBytes(), bytes);
 				s = new Socket(destinationAddr, 12345);
 				out.close();
 				
@@ -595,16 +613,17 @@ public class NetworkService extends Service {
 	
 	private void createNetwork() {
 		networkUUID = UUID.randomUUID().toString();
-		dbHelper.openConversation("testtest", networkUUID);
-		joinNetwork(networkUUID, getSharedPreferences("network_preferences", 0)
+		dbHelper.openConversation(getSharedPreferences(PREFS_NAME, 0)
+				.getString("password", "N/A"), networkUUID);
+		joinNetwork(networkUUID, getSharedPreferences(PREFS_NAME, 0)
 				.getString("identification", "N/A"));
 	}
 
-	private void joinNetwork(String networkUUID, String identifier) {
-		String identification = getSharedPreferences(PREFS_NAME, 0)
-				.getString("identification", "N/A");
+	private void joinNetwork(String networkUUID, String identification) {
 		
-		Message joinMessage = new Message(identifier, Message.MSG_MSGJOIN,
+		Log.d(TAG, "executing joinNetwork... with UUID " + networkUUID);
+		
+		Message joinMessage = new Message(identification, Message.MSG_MSGJOIN,
 				identification, dbHelper.getNextSequenceNumber(), networkUUID);
 		SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = preferences.edit();
@@ -627,7 +646,7 @@ public class NetworkService extends Service {
 	private void advertiseNetwork() {
 		String identification = getSharedPreferences(PREFS_NAME, 0)
 				.getString("identification", "N/A");
-		Message adMessage = new Message(networkUUID, Message.MSG_NETWORKAD,
+		Message adMessage = new Message(dbHelper.getOpenConversationUUID(), Message.MSG_NETWORKAD,
 				identification, -1, networkUUID);
 		new BroadcastMessageAsyncTask().execute(adMessage);
 	}
