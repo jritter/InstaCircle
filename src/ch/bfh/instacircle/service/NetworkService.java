@@ -15,6 +15,7 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -169,7 +170,7 @@ public class NetworkService extends Service {
 			
 			// Wait for a response
 			int i = 0;
-			while (i < 5){
+			while (i < 10){
 				if (advertisementArrived){
 					break;
 				}
@@ -269,11 +270,6 @@ public class NetworkService extends Service {
 		if (Arrays.asList(messagesToSave).contains(msg.getMessageType())){
 			
 			// Check whether participant already exists in the database
-			
-//			if (!dbHelper.isParticipantKnown(msg.getSender())){
-//				// Write participant into database if it does not exist
-//				dbHelper.insertParticipant(msg.getSender());
-//			}
 			
 			Log.d(TAG, "Got message with sequence number " + msg.getSequenceNumber());
 			Log.d(TAG, "Expecting sequence Number " + (dbHelper.getCurrentParticipantSequenceNumber(msg.getSender()) + 1));
@@ -447,10 +443,21 @@ public class NetworkService extends Service {
 				out.writeObject(msg[0]);
 				byte[] bytes = bos.toByteArray();
 				byte[] encryptedBytes = encrypt(cipherKey.getBytes(), bytes);
+				
+				
+				ByteBuffer b = ByteBuffer.allocate(4);
+				b.putInt(encryptedBytes.length);
+				byte[] length = b.array();
+				
+				byte[] bytesToSend = new byte [length.length + encryptedBytes.length];
+				
+				System.arraycopy(length, 0, bytesToSend, 0, length.length);
+				System.arraycopy(encryptedBytes, 0, bytesToSend, length.length, encryptedBytes.length);
+				
 				s = new DatagramSocket();
 				s.setBroadcast(true);
 				s.setReuseAddress(true);
-				DatagramPacket p = new DatagramPacket(encryptedBytes, encryptedBytes.length,
+				DatagramPacket p = new DatagramPacket(bytesToSend, bytesToSend.length,
 						broadcast, 12345);
 				s.send(p);
 				s.close();
@@ -484,14 +491,24 @@ public class NetworkService extends Service {
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				ObjectOutput out = new ObjectOutputStream(bos);
 				out.writeObject(msg[0]);
+				
 				byte[] bytes = bos.toByteArray();
 				byte[] encryptedBytes = encrypt(cipherKey.getBytes(), bytes);
 				s = new Socket(destinationAddr, 12345);
 				out.close();
 				
 				
+				ByteBuffer b = ByteBuffer.allocate(4);
+				b.putInt(encryptedBytes.length);
+				byte[] length = b.array();
+				
+				byte[] bytesToSend = new byte [length.length + encryptedBytes.length];
+				
+				System.arraycopy(length, 0, bytesToSend, 0, length.length);
+				System.arraycopy(encryptedBytes, 0, bytesToSend, length.length, encryptedBytes.length);
+				
 				DataOutputStream dOut = new DataOutputStream(s.getOutputStream());
-				dOut.write(encryptedBytes);
+				dOut.write(bytesToSend);
 				dOut.flush();
 				dOut.close();
 				s.close();
@@ -662,8 +679,6 @@ public class NetworkService extends Service {
 	private byte[] encrypt(byte[] rawSeed, byte[] clear) {
 		Cipher cipher;
 		MessageDigest digest;
-		byte[] clearBlock = new byte[1024];
-		System.arraycopy(clear, 0, clearBlock, 0, clear.length);
 		byte[] encrypted = null;
 		try {
 			digest = MessageDigest.getInstance("SHA-256");
@@ -671,23 +686,18 @@ public class NetworkService extends Service {
 			SecretKeySpec skeySpec = new SecretKeySpec(digest.digest(rawSeed), "AES");
 			cipher = Cipher.getInstance("AES");
 			cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-			encrypted = cipher.doFinal(clearBlock);
+			encrypted = cipher.doFinal(clear);
 			Log.d(TAG, "sent Length: " + encrypted.length);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		}
 		
 		return encrypted;

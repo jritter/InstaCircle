@@ -6,6 +6,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,21 +43,24 @@ public class UDPBroadcastReceiverThread extends Thread {
 			while (!Thread.currentThread().isInterrupted()) {
 
 				try {
-					DatagramPacket packet = new DatagramPacket(new byte[1040], 1040);
-					socket.receive(packet);
-	
-	
-	//				InetAddress address = packet.getAddress();
-	//				int port = packet.getPort();
-	//				int len = packet.getLength();
-					byte[] encryptedData = packet.getData();
-					Log.d(TAG, "LENGTH: " + encryptedData.length);
 					
-					byte[] data = decrypt(cipherKey.getBytes(), encryptedData);
+					DatagramPacket datagram = new DatagramPacket(new byte[socket.getReceiveBufferSize()], socket.getReceiveBufferSize());
+					socket.receive(datagram);
+
+					byte[] data = datagram.getData();
+					
+					byte[] length = new byte[4];
+					System.arraycopy(data, 0, length, 0, length.length);
+					
+					byte[] encryptedData = new byte[ByteBuffer.wrap(length).getInt()];
+					
+					System.arraycopy(data, length.length, encryptedData, 0, encryptedData.length);
+					
+					byte[] cleardata = decrypt(cipherKey.getBytes(), encryptedData);
 					
 					if (data != null){
 					
-						ByteArrayInputStream bis = new ByteArrayInputStream(data);
+						ByteArrayInputStream bis = new ByteArrayInputStream(cleardata);
 						ObjectInput oin = null;
 						try {
 						  oin = new ObjectInputStream(bis);
@@ -68,7 +72,7 @@ public class UDPBroadcastReceiverThread extends Thread {
 						}
 						
 						if (!Thread.currentThread().isInterrupted()){
-							msg.setSenderIPAddress((packet.getAddress()).getHostAddress());
+							msg.setSenderIPAddress((datagram.getAddress()).getHostAddress());
 							service.processBroadcastMessage(msg);
 						}
 					}
@@ -112,7 +116,7 @@ public class UDPBroadcastReceiverThread extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (BadPaddingException e) {
-			return null;
+			e.printStackTrace();
 		}
 		return decrypted;
 	}

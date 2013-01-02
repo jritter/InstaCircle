@@ -16,7 +16,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	// Basic DB parameters
 	private static final String DATABASE_NAME = "network.db";
-	private static final int DATABASE_VERSION = 8;
+	private static final int DATABASE_VERSION = 15;
 
 	// Table names
 	private static final String TABLE_NAME_MESSAGE = "message";
@@ -147,19 +147,29 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	public long insertParticipant(String participantIdentification, String ipAddress, long conversationId) {
 		long rowId = -1;
-		try {
-			SQLiteDatabase db = getWritableDatabase();
+		
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "SELECT * FROM " + TABLE_NAME_PARTICIPANT + " WHERE " + PARTICIPANT_IDENTIFICATION + " = '" + participantIdentification + "' AND " + PARTICIPANT_CONVERSATION_ID + " = " + conversationId;
+		Cursor c = db.rawQuery(query, null);
+		if (c.getCount() == 0){
+			db = getWritableDatabase();
 			ContentValues values = new ContentValues();
 			values.put(PARTICIPANT_IDENTIFICATION, participantIdentification);
 			values.put(PARTICIPANT_CONVERSATION_ID, conversationId);
 			values.put(PARTICIPANT_IP_ADDRESS, ipAddress);
 			values.put(PARTICIPANT_STATE, 1);
 			rowId = db.insert(TABLE_NAME_PARTICIPANT, null, values);
-		} catch (SQLiteException e) {
-			Log.e(TAG, "insert()", e);
-		} finally {
-			Log.d(TAG, "insert(): rowId=" + rowId);
 		}
+		else {
+			db = getWritableDatabase();
+			c.moveToLast();
+			rowId = c.getLong(c.getColumnIndex(PARTICIPANT_ID));
+			ContentValues values = new ContentValues();
+			values.put(PARTICIPANT_STATE, 1);
+			db.update(TABLE_NAME_PARTICIPANT, values, PARTICIPANT_ID + " = " + rowId, null);
+		}
+		
+		db.close();
 		return rowId;
 	}
 	
@@ -250,6 +260,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			values.put(CONVERSATION_START, System.currentTimeMillis());
 			values.put(CONVERSATION_OPEN, 1);
 			rowId = db.insert(TABLE_NAME_CONVERSATION, null, values);
+			
 		}
 		else {
 			c.moveToLast();
@@ -259,6 +270,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			db.update(TABLE_NAME_CONVERSATION, values, CONVERSATION_ID + " = " + rowId, null);
 		}
 		
+		db.close();
 		return rowId;
 	}
 	

@@ -35,7 +35,6 @@ public class AdhocWifiManager {
 	
 	public AdhocWifiManager(WifiManager wifiManager){
 		this.wifiManager = wifiManager;
-		wifiManager.setWifiEnabled(true);
 	}
 	
 	public void connectToNetwork(WifiConfiguration wifiConfiguration,
@@ -80,26 +79,8 @@ public class AdhocWifiManager {
 			
 			this.password = password;
 			this.ssid = ssid;
-			
 			config = new WifiConfiguration();
-
-			config.hiddenSSID = false;
-			config.priority = 10000;
-			if (password != null){
-				config.preSharedKey = "\"".concat(password).concat("\"");
-				config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-				config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-				config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-				config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
-				config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-				config.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-				config.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-				config.wepKeys = new String [] { password };
-			}
-			else {
-				config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-			}
-			config.status = WifiConfiguration.Status.ENABLED;        
+			
 			
 		}
 		
@@ -119,6 +100,7 @@ public class AdhocWifiManager {
 					break;
 				}
 			}
+			config = new WifiConfiguration();
 			this.ssid = config.SSID;
 			d = new ProgressDialog(context);
 		}
@@ -162,19 +144,51 @@ public class AdhocWifiManager {
 					return null;
 				}
 				
+				config.allowedAuthAlgorithms.clear();
+			    config.allowedGroupCiphers.clear();
+			    config.allowedKeyManagement.clear();
+			    config.allowedPairwiseCiphers.clear();
+			    config.allowedProtocols.clear();
+				
 				List<ScanResult> results = wifiManager.getScanResults();
 				for (ScanResult result : results){
 					Log.d(TAG, "SSID: " + result.SSID);
+					Log.d(TAG, "comparing " + result.SSID + " and " + ssid);
 					if (result.SSID.equals(ssid)){
-						config.SSID = result.SSID;
-						config.BSSID = result.BSSID;
+						config.hiddenSSID = false;
+						config.priority = 10000;
+						config.SSID = "\"".concat(result.SSID).concat("\"");
+						//config.BSSID = result.BSSID;
+						if (result.capabilities.contains("WPA")){
+							Log.d(TAG, "Connecting securely...");
+							config.preSharedKey = "\"".concat(password).concat("\"");
+							config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+							config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+							config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+							config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+							config.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+							config.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+							config.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
+						}
+						else if (result.capabilities.contains("WEP")){
+							config.wepKeys[0] = "\"" + password + "\""; 
+							config.wepTxKeyIndex = 0;
+							config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+							config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40); 
+						}
+						else {
+							Log.d(TAG, "setting plain configuration...");
+						    config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+						}
+						config.status = WifiConfiguration.Status.ENABLED;
 						break;
 					}
 				}	
 	
 				networkId = wifiManager.addNetwork(config);
-				
+				Log.d(TAG, "Network ID: " + networkId);
 				success = wifiManager.enableNetwork(networkId, true);
+				Log.d(TAG, "SUCCESS: " + success);
 			}
 			
 			ConnectivityManager conn = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

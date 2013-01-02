@@ -8,6 +8,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -50,13 +51,16 @@ public class TCPUnicastReceiverThread extends Thread {
 					clientSocket = serverSocket.accept();
 					in = clientSocket.getInputStream();
 				    DataInputStream dis = new DataInputStream(in);
-				    int len = 1040;
-				    byte[] encryptedData = new byte[len];
-				    if (len > 0) {
-				        dis.readFully(encryptedData);
-				    }
-					
-					
+				    
+				    
+				    // read the first 4 bytes to determine the length of the inputstream
+				    byte[] lenght = new byte[4];
+				    dis.read(lenght);
+				    
+				    // initialise and read an array with the previously determined length
+				    byte[] encryptedData = new byte[ByteBuffer.wrap(lenght).getInt()];
+				    dis.readFully(encryptedData);
+				    
 					Log.d(TAG, "LENGTH: " + encryptedData.length);
 					
 					byte[] data = decrypt(cipherKey.getBytes(), encryptedData);
@@ -82,10 +86,6 @@ public class TCPUnicastReceiverThread extends Thread {
 					serverSocket.close();
 					Thread.currentThread().interrupt();
 				}
-				
-				
-				
-				
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -54,7 +54,7 @@ public class MessageListFragment extends ListFragment {
         setListAdapter(mca);
         
     }
-
+    
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);

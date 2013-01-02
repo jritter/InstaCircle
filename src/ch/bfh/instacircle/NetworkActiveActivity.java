@@ -1,26 +1,25 @@
 package ch.bfh.instacircle;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 import android.app.ActionBar;
 import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -47,7 +46,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 import ch.bfh.instacircle.db.NetworkDbHelper;
 import ch.bfh.instacircle.service.NetworkService;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
@@ -397,27 +395,6 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 			String text = preferences.getString("SSID", "N/A")
 					+ "||" + preferences.getString("password", "N/A");
-//			String lang = "en";
-//			byte[] textBytes = text.getBytes();
-//			byte[] langBytes = null;
-//			try {
-//				langBytes = lang.getBytes("US-ASCII");
-//			} catch (UnsupportedEncodingException e1) {
-//				e1.printStackTrace();
-//			}
-//			int langLength = langBytes.length;
-//			int textLength = textBytes.length;
-//			byte[] payload = new byte[1 + langLength + textLength];
-//
-//			// set status byte (see NDEF spec for actual bits)
-//			payload[0] = (byte) langLength;
-//
-//			// copy langbytes and textbytes into payload
-//			System.arraycopy(langBytes, 0, payload, 1, langLength);
-//			System.arraycopy(textBytes, 0, payload, 1 + langLength, textLength);
-//
-//			NdefRecord record = new NdefRecord(NdefRecord.TNF_WELL_KNOWN,
-//					NdefRecord.RTD_TEXT, new byte[0], payload);
 			
 			NdefRecord record = createMimeRecord("application/ch.bfh.instacircle", text.getBytes());
 			
@@ -464,7 +441,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFiltersArray, null);
 		}
 		
-		checkNetworkState();
+		//checkNetworkState();
 
 	}
 	
@@ -538,7 +515,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	
 		@Override
 	    public void onReceive(Context context, Intent intent) {
-	        checkNetworkState();
+	        //checkNetworkState();
 	        Log.d(TAG, "State: " +  intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN));
 	    }
 	};
