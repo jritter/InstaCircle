@@ -12,7 +12,7 @@ public class SerializableWifiConfiguration implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	
+
 	public String BSSID;
 	public String SSID;
 	public BitSet allowedAuthAlgorithms;
@@ -27,9 +27,7 @@ public class SerializableWifiConfiguration implements Serializable {
 	public String[] wepKeys;
 	public int wepTxKeyIndex;
 
-
-
-	public SerializableWifiConfiguration (WifiConfiguration wificonfiguration) {
+	public SerializableWifiConfiguration(WifiConfiguration wificonfiguration) {
 		this.BSSID = wificonfiguration.BSSID;
 		this.SSID = wificonfiguration.SSID;
 		this.allowedAuthAlgorithms = wificonfiguration.allowedAuthAlgorithms;
@@ -43,13 +41,12 @@ public class SerializableWifiConfiguration implements Serializable {
 		this.wepKeys = wificonfiguration.wepKeys;
 		this.wepTxKeyIndex = wificonfiguration.wepTxKeyIndex;
 	}
-	
+
 	public WifiConfiguration getWifiConfiguration() {
 		WifiConfiguration config = new WifiConfiguration();
-		if (this.BSSID == null){
+		if (this.BSSID == null) {
 			config.BSSID = "";
-		}
-		else {
+		} else {
 			config.BSSID = this.BSSID;
 		}
 		config.SSID = this.SSID;
@@ -66,7 +63,7 @@ public class SerializableWifiConfiguration implements Serializable {
 
 		return config;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "SerializableWifiConfiguration [BSSID=" + BSSID + ", SSID="
@@ -75,9 +72,9 @@ public class SerializableWifiConfiguration implements Serializable {
 				+ ", allowedKeyManagement=" + allowedKeyManagement
 				+ ", allowedPairwiseCiphers=" + allowedPairwiseCiphers
 				+ ", allowedProtocols=" + allowedProtocols + ", hiddenSSID="
-				+ hiddenSSID + ", preSharedKey="
-				+ preSharedKey + ", priority=" + priority + ", status="
-				+ status + ", wepKeys=" + Arrays.toString(wepKeys)
-				+ ", wepTxKeyIndex=" + wepTxKeyIndex + "]";
+				+ hiddenSSID + ", preSharedKey=" + preSharedKey + ", priority="
+				+ priority + ", status=" + status + ", wepKeys="
+				+ Arrays.toString(wepKeys) + ", wepTxKeyIndex=" + wepTxKeyIndex
+				+ "]";
 	}
 }

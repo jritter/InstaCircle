@@ -11,8 +11,9 @@ import android.view.View;
 import android.widget.EditText;
 
 public class ConnectNetworkDialogFragment extends DialogFragment {
-	
-	private static final String TAG = ConnectNetworkDialogFragment.class.getSimpleName();
+
+	private static final String TAG = ConnectNetworkDialogFragment.class
+			.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
 
 	/*
@@ -34,18 +35,16 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 
 	private String password;
 	private String networkKey;
-	
+
 	private boolean showNetworkKeyField;
-	
-	public ConnectNetworkDialogFragment(boolean showNetworkKeyField){
+
+	public ConnectNetworkDialogFragment(boolean showNetworkKeyField) {
 		this.showNetworkKeyField = showNetworkKeyField;
 	}
-	
-	
-	
+
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		
+
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		// Get the layout inflater
 		LayoutInflater inflater = getActivity().getLayoutInflater();
@@ -54,11 +53,11 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 
 		txtPassword = (EditText) view.findViewById(R.id.password);
 		txtNetworkKey = (EditText) view.findViewById(R.id.networkkey);
-		
-		if (!showNetworkKeyField){
+
+		if (!showNetworkKeyField) {
 			txtNetworkKey.setVisibility(View.INVISIBLE);
 		}
-		
+
 		// Inflate and set the layout for the dialog
 		// Pass null as the parent view because its going in the dialog layout
 		builder.setView(view);
@@ -103,9 +102,9 @@ public class ConnectNetworkDialogFragment extends DialogFragment {
 	public String getPassword() {
 		return password;
 	}
-	
+
 	public String getNetworkKey() {
 		return networkKey;
 	}
-	
+
 }

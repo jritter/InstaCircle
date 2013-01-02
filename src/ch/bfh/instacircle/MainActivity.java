@@ -6,8 +6,8 @@ import java.util.List;
 
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.AlertDialog;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -133,10 +133,6 @@ public class MainActivity extends Activity implements OnClickListener,
 		wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		adhoc = new AdhocWifiManager(wifi);
 
-		if (wifi.isWifiEnabled() == false) {
-			wifi.setWifiEnabled(true);
-		}
-
 		adapter = new SimpleAdapter(this, arraylist,
 				R.layout.list_item_network, new String[] { "SSID",
 						"capabilities" }, new int[] { R.id.content,
@@ -154,22 +150,24 @@ public class MainActivity extends Activity implements OnClickListener,
 
 				for (ScanResult result : results) {
 					HashMap<String, Object> item = new HashMap<String, Object>();
-					
+
 					item.put("known", false);
-					
-					// check whether the network is already known, i.e. the password is already stored in the device
-					for (WifiConfiguration configuredNetwork : configuredNetworks){
-						if (configuredNetwork.SSID.equals("\"".concat(result.SSID).concat("\""))){
+
+					// check whether the network is already known, i.e. the
+					// password is already stored in the device
+					for (WifiConfiguration configuredNetwork : configuredNetworks) {
+						if (configuredNetwork.SSID.equals("\"".concat(
+								result.SSID).concat("\""))) {
 							item.put("known", true);
 							item.put("netid", configuredNetwork.networkId);
 							break;
-						}	
+						}
 					}
-					
-					if (result.capabilities.contains("WPA") || result.capabilities.contains("WEP")){
+
+					if (result.capabilities.contains("WPA")
+							|| result.capabilities.contains("WEP")) {
 						item.put("secure", true);
-					}
-					else {
+					} else {
 						item.put("secure", false);
 					}
 					item.put("SSID", result.SSID);
@@ -205,7 +203,7 @@ public class MainActivity extends Activity implements OnClickListener,
 			}
 
 			if (nfcAdapter.isEnabled()) {
-				
+
 				Intent intent = new Intent(this, getClass());
 				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -278,12 +276,11 @@ public class MainActivity extends Activity implements OnClickListener,
 				alertDialog.show();
 			}
 			return true;
-			
-			
+
 		case R.id.rescan_wifi:
 			wifi.startScan();
 			Toast.makeText(this, "Rescan initiated", Toast.LENGTH_SHORT).show();
-			
+
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -301,7 +298,7 @@ public class MainActivity extends Activity implements OnClickListener,
 			editor.putString("SSID", config[0]);
 			editor.putString("password", config[1]);
 			editor.commit();
-			
+
 			connect(config);
 		}
 	}
@@ -317,21 +314,23 @@ public class MainActivity extends Activity implements OnClickListener,
 	}
 
 	public void onDialogPositiveClick(DialogFragment dialog) {
-		
-		if (selectedNetId != -1){
+
+		if (selectedNetId != -1) {
 			adhoc.connectToNetwork(selectedNetId, this);
-		}
-		else {
+		} else {
 			adhoc.connectToNetwork(selectedResult.SSID,
-					((ConnectNetworkDialogFragment) dialog).getNetworkKey(), this);
+					((ConnectNetworkDialogFragment) dialog).getNetworkKey(),
+					this);
 		}
-		
-		Log.d(TAG, "now saving the password " + ((ConnectNetworkDialogFragment) dialog).getPassword());
+
+		Log.d(TAG, "now saving the password "
+				+ ((ConnectNetworkDialogFragment) dialog).getPassword());
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString("SSID", selectedResult.SSID);
-		editor.putString("password", ((ConnectNetworkDialogFragment) dialog).getPassword());
+		editor.putString("password",
+				((ConnectNetworkDialogFragment) dialog).getPassword());
 		editor.commit();
-		
+
 		dialog.dismiss();
 	}
 
@@ -340,20 +339,18 @@ public class MainActivity extends Activity implements OnClickListener,
 
 		HashMap<String, Object> hash = (HashMap<String, Object>) listview
 				.getAdapter().getItem(arg2);
-		
+
 		selectedResult = (ScanResult) hash.get("object");
 		selectedNetId = -1;
-		
-		if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))){
+
+		if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))) {
 			DialogFragment dialog = new ConnectNetworkDialogFragment(true);
 			dialog.show(getFragmentManager(), TAG);
-		}
-		else if ((Boolean) hash.get("known")){
+		} else if ((Boolean) hash.get("known")) {
 			selectedNetId = (Integer) hash.get("netid");
 			DialogFragment dialog = new ConnectNetworkDialogFragment(false);
 			dialog.show(getFragmentManager(), TAG);
-		}
-		else {
+		} else {
 			DialogFragment dialog = new ConnectNetworkDialogFragment(false);
 			dialog.show(getFragmentManager(), TAG);
 		}
@@ -424,7 +421,7 @@ public class MainActivity extends Activity implements OnClickListener,
 			nfcAvailable = true;
 
 		}
-		
+
 		if (nfcAvailable) {
 			nfcAdapter.enableForegroundDispatch(this, pendingIntent,
 					intentFiltersArray, null);
@@ -444,42 +441,46 @@ public class MainActivity extends Activity implements OnClickListener,
 		editor.putString("SSID", config[0]);
 		editor.putString("password", config[1]);
 		editor.commit();
-		
+
 		connect(config);
 	}
-	
-	private void connect(String [] config){
+
+	private void connect(String[] config) {
 		boolean connectedSuccessful = false;
-		// check whether the network is already known, i.e. the password is already stored in the device
-		for (WifiConfiguration configuredNetwork : wifi.getConfiguredNetworks()){
-			if (configuredNetwork.SSID.equals("\"".concat(config[0]).concat("\""))){
+		// check whether the network is already known, i.e. the password is
+		// already stored in the device
+		for (WifiConfiguration configuredNetwork : wifi.getConfiguredNetworks()) {
+			if (configuredNetwork.SSID.equals("\"".concat(config[0]).concat(
+					"\""))) {
 				Log.d(TAG, "Found known network, connecting...");
 				connectedSuccessful = true;
 				adhoc.connectToNetwork(configuredNetwork.networkId, this);
 				break;
-			}	
+			}
 		}
-		if (!connectedSuccessful){
-			for (ScanResult result : wifi.getScanResults()){
-				if(result.SSID.equals(config[0])){
+		if (!connectedSuccessful) {
+			for (ScanResult result : wifi.getScanResults()) {
+				if (result.SSID.equals(config[0])) {
 					connectedSuccessful = true;
 					Log.d(TAG, "Found unknown network, connecting...");
 					adhoc.connectToNetwork(config[0], config[1], this);
 					break;
 				}
-			}		
+			}
 		}
-		
-		if (!connectedSuccessful){
+
+		if (!connectedSuccessful) {
 			Log.d(TAG, "network not found");
 			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 			alertDialog.setTitle("InstaCircle - Network not found");
-			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
-			      public void onClick(DialogInterface dialog, int which) {
-			    	  dialog.dismiss();
-			       } 
-			});
-			alertDialog.setMessage("The network \"" + config [0] + "\" is not available, cannot connect.");
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.dismiss();
+						}
+					});
+			alertDialog.setMessage("The network \"" + config[0]
+					+ "\" is not available, cannot connect.");
 			alertDialog.show();
 		}
 	}

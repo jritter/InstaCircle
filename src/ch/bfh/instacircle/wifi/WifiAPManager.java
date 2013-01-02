@@ -29,7 +29,7 @@ public class WifiAPManager {
 
 	private static final String TAG = WifiAPManager.class.getName();
 	private static final String PREFS_NAME = "network_preferences";
-	
+
 	private SharedPreferences preferences;
 	private SharedPreferences.Editor editor;
 
@@ -56,8 +56,8 @@ public class WifiAPManager {
 												// the wifi always being enabled
 												// after wifi ap is disabled
 
-	
 	private WifiConfiguration config;
+
 	/**
 	 * Toggle the WiFi AP state
 	 * 
@@ -73,65 +73,69 @@ public class WifiAPManager {
 				|| getWifiAPState() == WIFI_AP_STATE_ENABLING;
 		new SetWifiAPTask(!wifiApIsOn, context).execute();
 	}
-	
-	public void enableHotspot(WifiManager wifihandler, WifiConfiguration config, Context context) {
-		
+
+	public void enableHotspot(WifiManager wifihandler,
+			WifiConfiguration config, Context context) {
+
 		// Backing up old configuration
-		SerializableWifiConfiguration oldConfiguration = new SerializableWifiConfiguration(getWifiApConfiguration(wifihandler));
-		
+		SerializableWifiConfiguration oldConfiguration = new SerializableWifiConfiguration(
+				getWifiApConfiguration(wifihandler));
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos;
+		ObjectOutputStream oos;
 		try {
 			oos = new ObjectOutputStream(baos);
 			oos.writeObject(oldConfiguration);
-	        oos.close();
+			oos.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		String serializedAPConfig = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-        
+		String serializedAPConfig = Base64.encodeToString(baos.toByteArray(),
+				Base64.DEFAULT);
+
 		preferences = context.getSharedPreferences(PREFS_NAME, 0);
 		editor = preferences.edit();
 		editor.putString("originalApConfig", serializedAPConfig);
 		editor.putString("password", config.preSharedKey);
 		editor.putString("SSID", config.SSID);
 		editor.commit();
-		
+
 		this.config = config;
-		
-		
+
 		if (wifi == null) {
 			wifi = wifihandler;
 		}
-		
+
 		new SetWifiAPTask(true, context).execute();
 	}
-	
 
 	public void disableHotspot(WifiManager wifihandler, Context context) {
-		
+
 		if (wifi == null) {
 			wifi = wifihandler;
 		}
-		
+
 		preferences = context.getSharedPreferences(PREFS_NAME, 0);
-		String serializedAPConfig = preferences.getString("originalApConfig", "");
-		
+		String serializedAPConfig = preferences.getString("originalApConfig",
+				"");
+
 		try {
-			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(serializedAPConfig, Base64.DEFAULT)));
-			SerializableWifiConfiguration oldConfiguration = (SerializableWifiConfiguration) ois.readObject();
+			ObjectInputStream ois = new ObjectInputStream(
+					new ByteArrayInputStream(Base64.decode(serializedAPConfig,
+							Base64.DEFAULT)));
+			SerializableWifiConfiguration oldConfiguration = (SerializableWifiConfiguration) ois
+					.readObject();
 			setWifiApConfiguration(oldConfiguration.getWifiConfiguration());
 		} catch (StreamCorruptedException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} catch (ClassNotFoundException e){
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
+
 		new SetWifiAPTask(false, context).execute();
 	}
-	
 
 	/**
 	 * Enable/disable wifi
@@ -143,9 +147,9 @@ public class WifiAPManager {
 	private int setWifiApEnabled(boolean enabled) {
 		Log.d(TAG, "*** setWifiApEnabled CALLED **** " + enabled);
 
-//		WifiConfiguration config = new WifiConfiguration();
-//		config.SSID = "My AP";
-//		config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+		// WifiConfiguration config = new WifiConfiguration();
+		// config.SSID = "My AP";
+		// config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
 
 		// remember wirelesses current state
 		if (enabled && stateWifiWasIn == -1) {
@@ -273,21 +277,21 @@ public class WifiAPManager {
 						- constant]));
 		return state;
 	}
-	
-	public int getWifiAPState(WifiManager wifihandler){
+
+	public int getWifiAPState(WifiManager wifihandler) {
 		if (wifi == null) {
 			wifi = wifihandler;
 		}
-		
+
 		return getWifiAPState();
 	}
-	
+
 	public boolean isWifiAPEnabled(WifiManager wifihandler) {
-		
+
 		if (wifi == null) {
 			wifi = wifihandler;
 		}
-		
+
 		try {
 			Method method = wifi.getClass().getMethod("isWifiApEnabled");
 			return (Boolean) method.invoke(wifi);
@@ -303,11 +307,10 @@ public class WifiAPManager {
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
 	class SetWifiAPTask extends AsyncTask<Void, Void, Void> {
-		
+
 		private boolean mode; // enable or disable wifi AP
 		private ProgressDialog d;
 		private Context context;
-		
 
 		/**
 		 * enable/disable the wifi ap
@@ -323,7 +326,7 @@ public class WifiAPManager {
 		public SetWifiAPTask(boolean mode, Context context) {
 			this.context = context;
 			this.mode = mode;
-			if (mode){
+			if (mode) {
 				d = new ProgressDialog(context);
 			}
 		}
@@ -336,7 +339,7 @@ public class WifiAPManager {
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
-			if (mode){
+			if (mode) {
 				d.setTitle("Turning WiFi AP " + (mode ? "on" : "off") + "...");
 				d.setMessage("...please wait a moment.");
 				d.show();
@@ -354,24 +357,25 @@ public class WifiAPManager {
 			setWifiApEnabled(mode);
 			return null;
 		}
-		
+
 		@Override
 		protected void onPostExecute(Void result) {
 			super.onPostExecute(result);
-			if (mode){
+			if (mode) {
 				d.dismiss();
 				Intent intent = new Intent(context, NetworkService.class);
 				intent.putExtra("action", "createnetwork");
 				context.stopService(intent);
-		        context.startService(intent);
+				context.startService(intent);
 			}
 		}
 	}
-	
+
 	public WifiConfiguration getWifiApConfiguration(WifiManager wifi) {
 		try {
-			Method method1 = wifi.getClass().getMethod("getWifiApConfiguration");
-			WifiConfiguration config = (WifiConfiguration)method1.invoke(wifi);
+			Method method1 = wifi.getClass()
+					.getMethod("getWifiApConfiguration");
+			WifiConfiguration config = (WifiConfiguration) method1.invoke(wifi);
 			return config;
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
@@ -384,11 +388,12 @@ public class WifiAPManager {
 		}
 		return null;
 	}
-	
+
 	public boolean setWifiApConfiguration(WifiConfiguration config) {
 		try {
-			Method method1 = wifi.getClass().getMethod("setWifiApConfiguration", WifiConfiguration.class);
-			return (Boolean) method1.invoke(wifi, config); 
+			Method method1 = wifi.getClass().getMethod(
+					"setWifiApConfiguration", WifiConfiguration.class);
+			return (Boolean) method1.invoke(wifi, config);
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
 		} catch (IllegalArgumentException e) {
@@ -400,6 +405,5 @@ public class WifiAPManager {
 		}
 		return false;
 	}
-	
-	
+
 }

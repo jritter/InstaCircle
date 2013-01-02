@@ -6,12 +6,12 @@
     android:columnCount="4" >
 
     <TextView
-        android:id="@+id/network_uuid_label"
+        android:id="@+id/network_ssid_label"
         android:layout_column="0"
         android:layout_columnSpan="2"
         android:layout_gravity="left"
         android:layout_row="0"
-        android:text="Network UUID: " />
+        android:text="Network SSID: " />
 
     <Space
         android:layout_width="10dp"
@@ -20,20 +20,19 @@
         android:layout_row="0" />
 
     <TextView
-        android:id="@+id/network_uuid"
-        android:layout_width="0dip"
+        android:id="@+id/network_ssid"
         android:layout_column="3"
-        android:layout_gravity="left|fill_horizontal"
+        android:layout_gravity="left"
         android:layout_row="0"
         android:text="" />
 
     <TextView
-        android:id="@+id/network_ssid_label"
+        android:id="@+id/network_password_label"
         android:layout_column="0"
         android:layout_columnSpan="2"
         android:layout_gravity="left"
         android:layout_row="1"
-        android:text="Network SSID: " />
+        android:text="Network Password: " />
 
     <Space
         android:layout_width="10dp"
@@ -42,19 +41,19 @@
         android:layout_row="1" />
 
     <TextView
-        android:id="@+id/network_ssid"
+        android:id="@+id/network_password"
         android:layout_column="3"
         android:layout_gravity="left"
         android:layout_row="1"
         android:text="" />
-
+    
     <TextView
-        android:id="@+id/network_password_label"
+        android:id="@+id/participant_identification_label"
         android:layout_column="0"
         android:layout_columnSpan="2"
         android:layout_gravity="left"
         android:layout_row="2"
-        android:text="Network Password: " />
+        android:text="Identification: " />
 
     <Space
         android:layout_width="10dp"
@@ -63,19 +62,19 @@
         android:layout_row="2" />
 
     <TextView
-        android:id="@+id/network_password"
+        android:id="@+id/participant_identification"
         android:layout_column="3"
         android:layout_gravity="left"
         android:layout_row="2"
         android:text="" />
     
     <TextView
-        android:id="@+id/participant_identification_label"
+        android:id="@+id/ip_address_label"
         android:layout_column="0"
         android:layout_columnSpan="2"
         android:layout_gravity="left"
         android:layout_row="3"
-        android:text="Identification: " />
+        android:text="IP Address: " />
 
     <Space
         android:layout_width="10dp"
@@ -84,19 +83,19 @@
         android:layout_row="3" />
 
     <TextView
-        android:id="@+id/participant_identification"
+        android:id="@+id/ip_address"
         android:layout_column="3"
         android:layout_gravity="left"
         android:layout_row="3"
         android:text="" />
     
     <TextView
-        android:id="@+id/ip_address_label"
+        android:id="@+id/broadcast_address_label"
         android:layout_column="0"
         android:layout_columnSpan="2"
         android:layout_gravity="left"
         android:layout_row="4"
-        android:text="IP Address: " />
+        android:text="Broadcast Address: " />
 
     <Space
         android:layout_width="10dp"
@@ -105,31 +104,10 @@
         android:layout_row="4" />
 
     <TextView
-        android:id="@+id/ip_address"
-        android:layout_column="3"
-        android:layout_gravity="left"
-        android:layout_row="4"
-        android:text="" />
-    
-    <TextView
-        android:id="@+id/broadcast_address_label"
-        android:layout_column="0"
-        android:layout_columnSpan="2"
-        android:layout_gravity="left"
-        android:layout_row="5"
-        android:text="Broadcast Address: " />
-
-    <Space
-        android:layout_width="10dp"
-        android:layout_height="1dp"
-        android:layout_column="2"
-        android:layout_row="5" />
-
-    <TextView
         android:id="@+id/broadcast_address"
         android:layout_column="3"
         android:layout_gravity="left"
-        android:layout_row="5"
+        android:layout_row="4"
         android:text="" />
     
 </GridLayout>

@@ -20,15 +20,16 @@ import javax.crypto.spec.SecretKeySpec;
 import android.util.Log;
 import ch.bfh.instacircle.Message;
 
-public class UDPBroadcastReceiverThread extends Thread { 
-	
-	private static final String TAG = UDPBroadcastReceiverThread.class.getSimpleName();
+public class UDPBroadcastReceiverThread extends Thread {
+
+	private static final String TAG = UDPBroadcastReceiverThread.class
+			.getSimpleName();
 	public DatagramSocket socket;
-	
+
 	NetworkService service;
-	
+
 	private String cipherKey;
-	
+
 	public UDPBroadcastReceiverThread(NetworkService service, String cipherKey) {
 		this.setName(TAG);
 		this.service = service;
@@ -43,55 +44,61 @@ public class UDPBroadcastReceiverThread extends Thread {
 			while (!Thread.currentThread().isInterrupted()) {
 
 				try {
-					
-					DatagramPacket datagram = new DatagramPacket(new byte[socket.getReceiveBufferSize()], socket.getReceiveBufferSize());
+
+					DatagramPacket datagram = new DatagramPacket(
+							new byte[socket.getReceiveBufferSize()],
+							socket.getReceiveBufferSize());
 					socket.receive(datagram);
 
 					byte[] data = datagram.getData();
-					
+
 					byte[] length = new byte[4];
 					System.arraycopy(data, 0, length, 0, length.length);
-					
-					byte[] encryptedData = new byte[ByteBuffer.wrap(length).getInt()];
-					
-					System.arraycopy(data, length.length, encryptedData, 0, encryptedData.length);
-					
-					byte[] cleardata = decrypt(cipherKey.getBytes(), encryptedData);
-					
-					if (data != null){
-					
-						ByteArrayInputStream bis = new ByteArrayInputStream(cleardata);
+
+					byte[] encryptedData = new byte[ByteBuffer.wrap(length)
+							.getInt()];
+
+					System.arraycopy(data, length.length, encryptedData, 0,
+							encryptedData.length);
+
+					byte[] cleardata = decrypt(cipherKey.getBytes(),
+							encryptedData);
+
+					if (data != null) {
+
+						ByteArrayInputStream bis = new ByteArrayInputStream(
+								cleardata);
 						ObjectInput oin = null;
 						try {
-						  oin = new ObjectInputStream(bis);
-						  msg = (Message) oin.readObject(); 
-		
+							oin = new ObjectInputStream(bis);
+							msg = (Message) oin.readObject();
+
 						} finally {
-						  bis.close();
-						  oin.close();
+							bis.close();
+							oin.close();
 						}
-						
-						if (!Thread.currentThread().isInterrupted()){
-							msg.setSenderIPAddress((datagram.getAddress()).getHostAddress());
+
+						if (!Thread.currentThread().isInterrupted()) {
+							msg.setSenderIPAddress((datagram.getAddress())
+									.getHostAddress());
 							service.processBroadcastMessage(msg);
 						}
 					}
-					
-				}
-				catch (IOException e){
+
+				} catch (IOException e) {
 					Log.d(TAG, "Terminating...");
 					socket.close();
 					Thread.currentThread().interrupt();
 				}
-				
+
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-		} catch (ClassNotFoundException e){
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private byte[] decrypt(byte[] rawSeed, byte[] encrypted) {
 		Cipher cipher;
 		MessageDigest digest;
@@ -99,7 +106,8 @@ public class UDPBroadcastReceiverThread extends Thread {
 		try {
 			digest = MessageDigest.getInstance("SHA-256");
 			digest.reset();
-			SecretKeySpec skeySpec = new SecretKeySpec(digest.digest(rawSeed), "AES");
+			SecretKeySpec skeySpec = new SecretKeySpec(digest.digest(rawSeed),
+					"AES");
 			cipher = Cipher.getInstance("AES");
 			cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 			decrypted = cipher.doFinal(encrypted);
