@@ -68,8 +68,6 @@ public class NetworkService extends Service {
 	private Set<String> availableNetworks = Collections
 			.synchronizedSet(new HashSet<String>());
 
-	private volatile boolean advertisementArrived = false;
-
 	private NetworkDbHelper dbHelper;
 
 	private UDPBroadcastReceiverThread udpBroadcastReceiverThread;
@@ -119,7 +117,7 @@ public class NetworkService extends Service {
 				this);
 		notificationBuilder.setContentTitle("Adhoc Network Chat");
 		notificationBuilder
-				.setContentText("An Adhoc Network Chat session is running. Tap to bring in front.");
+				.setContentText("An InstaCircle Chat session is running. Tap to bring in front.");
 		notificationBuilder
 				.setSmallIcon(R.drawable.glyphicons_244_conversation);
 		notificationBuilder.setContentIntent(pIntent);
@@ -503,33 +501,6 @@ public class NetworkService extends Service {
 		}
 	}
 
-	private class DiscoverNetworkTask extends AsyncTask<Void, Void, Void> {
-		@Override
-		protected void onPostExecute(Void result) {
-			super.onPostExecute(result);
-			if (availableNetworks.isEmpty()) {
-				Log.d(TAG, "no networks found");
-			}
-
-		}
-
-		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			discoverNetworks();
-		}
-
-		protected Void doInBackground(Void... args) {
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-
-	}
-
 	private BroadcastReceiver messageSendReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -618,19 +589,6 @@ public class NetworkService extends Service {
 		Message whoisthereMessage = new Message(identification,
 				Message.MSG_WHOISTHERE, identification, -1);
 		new BroadcastMessageAsyncTask().execute(whoisthereMessage);
-	}
-
-	private void discoverNetworks() {
-		Message discoverMessage = new Message(getSharedPreferences(
-				"network_preferences", 0).getString("identifier", "N/A"),
-				Message.MSG_DISCOVERNETS, getSharedPreferences(
-						"network_preferences", 0)
-						.getString("identifier", "N/A"));
-		new BroadcastMessageAsyncTask().execute(discoverMessage);
-	}
-
-	public Set<String> getAvilableNetworks() {
-		return availableNetworks;
 	}
 
 	private byte[] encrypt(byte[] rawSeed, byte[] clear) {

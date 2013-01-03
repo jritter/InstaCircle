@@ -1,3 +1,15 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ *  Parts of this have been adopted from a post at stackoverflow.com
+ *  http://stackoverflow.com/a/7049074/1233435
+ */
+
 package ch.bfh.instacircle.wifi;
 
 import java.io.ByteArrayInputStream;
@@ -61,12 +73,16 @@ public class WifiAPManager {
 	/**
 	 * Toggle the WiFi AP state
 	 * 
-	 * @param wifihandler
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * @param context
+	 *            the android context from which this functionality is used
+	 * 
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
-	public void toggleWiFiAP(WifiManager wifihandler, Context context) {
-		if (wifi == null) {
-			wifi = wifihandler;
+	public void toggleWiFiAP(WifiManager wifi, Context context) {
+		if (this.wifi == null) {
+			this.wifi = wifi;
 		}
 
 		boolean wifiApIsOn = getWifiAPState() == WIFI_AP_STATE_ENABLED
@@ -74,12 +90,27 @@ public class WifiAPManager {
 		new SetWifiAPTask(!wifiApIsOn, context).execute();
 	}
 
-	public void enableHotspot(WifiManager wifihandler,
-			WifiConfiguration config, Context context) {
+	/**
+	 * Enables the tethering hotspot using a given configuration
+	 * 
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * @param config
+	 *            the wifi AP configuration which should be applied
+	 * @param context
+	 *            the android context from which this functionality is used
+	 */
+	public void enableHotspot(WifiManager wifi, WifiConfiguration config,
+			Context context) {
+
+		if (this.wifi == null) {
+			this.wifi = wifi;
+		}
+		this.config = config;
 
 		// Backing up old configuration
 		SerializableWifiConfiguration oldConfiguration = new SerializableWifiConfiguration(
-				getWifiApConfiguration(wifihandler));
+				getWifiApConfiguration(wifi));
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos;
@@ -100,21 +131,24 @@ public class WifiAPManager {
 		editor.putString("SSID", config.SSID);
 		editor.commit();
 
-		this.config = config;
-
-		if (wifi == null) {
-			wifi = wifihandler;
-		}
-
 		new SetWifiAPTask(true, context).execute();
 	}
 
-	public void disableHotspot(WifiManager wifihandler, Context context) {
+	/**
+	 * Disables the tethering hotspot and restores the previous configuration
+	 * 
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * @param context
+	 *            the android context from which this functionality is used
+	 */
+	public void disableHotspot(WifiManager wifi, Context context) {
 
-		if (wifi == null) {
-			wifi = wifihandler;
+		if (this.wifi == null) {
+			this.wifi = wifi;
 		}
 
+		// restoring the original configuration
 		preferences = context.getSharedPreferences(PREFS_NAME, 0);
 		String serializedAPConfig = preferences.getString("originalApConfig",
 				"");
@@ -125,7 +159,8 @@ public class WifiAPManager {
 							Base64.DEFAULT)));
 			SerializableWifiConfiguration oldConfiguration = (SerializableWifiConfiguration) ois
 					.readObject();
-			setWifiApConfiguration(oldConfiguration.getWifiConfiguration());
+			setWifiApConfiguration(wifi,
+					oldConfiguration.getWifiConfiguration());
 		} catch (StreamCorruptedException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -138,18 +173,16 @@ public class WifiAPManager {
 	}
 
 	/**
-	 * Enable/disable wifi
+	 * This method implements the logic for actually enabling / disabling the
+	 * wifi AP
 	 * 
-	 * @param true or false
-	 * @return WifiAP state
+	 * @param enabled
+	 *            true for enabling, false for disabling
+	 * @return the wifi AP state
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
 	private int setWifiApEnabled(boolean enabled) {
 		Log.d(TAG, "*** setWifiApEnabled CALLED **** " + enabled);
-
-		// WifiConfiguration config = new WifiConfiguration();
-		// config.SSID = "My AP";
-		// config.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
 
 		// remember wirelesses current state
 		if (enabled && stateWifiWasIn == -1) {
@@ -247,7 +280,7 @@ public class WifiAPManager {
 	/**
 	 * Get the wifi AP state
 	 * 
-	 * @return WifiAP state
+	 * @return the wifi AP state
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
 	private int getWifiAPState() {
@@ -278,18 +311,33 @@ public class WifiAPManager {
 		return state;
 	}
 
-	public int getWifiAPState(WifiManager wifihandler) {
+	/**
+	 * Get the wifi AP state
+	 * 
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * 
+	 * @return the wifi AP state
+	 */
+	public int getWifiAPState(WifiManager wifi) {
 		if (wifi == null) {
-			wifi = wifihandler;
+			this.wifi = wifi;
 		}
-
 		return getWifiAPState();
 	}
 
-	public boolean isWifiAPEnabled(WifiManager wifihandler) {
+	/**
+	 * Get the wifi AP state
+	 * 
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * 
+	 * @return true if the wifi AP is enabled, false if it is disabled.
+	 */
+	public boolean isWifiAPEnabled(WifiManager wifi) {
 
-		if (wifi == null) {
-			wifi = wifihandler;
+		if (this.wifi == null) {
+			this.wifi = wifi;
 		}
 
 		try {
@@ -302,7 +350,7 @@ public class WifiAPManager {
 	}
 
 	/**
-	 * the AsyncTask to enable/disable the wifi ap
+	 * the AsyncTask to enable/disable the wifi AP
 	 * 
 	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
@@ -317,10 +365,8 @@ public class WifiAPManager {
 		 * 
 		 * @param mode
 		 *            enable or disable wifi AP
-		 * @param finish
-		 *            finalize or not (e.g. on exit)
 		 * @param context
-		 *            the context of the calling activity
+		 *            the android context from which this functionality is used
 		 * @author http://stackoverflow.com/a/7049074/1233435
 		 */
 		public SetWifiAPTask(boolean mode, Context context) {
@@ -371,6 +417,15 @@ public class WifiAPManager {
 		}
 	}
 
+	/**
+	 * Get the wifi AP configuration using reflection because the method is
+	 * currently hidden
+	 * 
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * 
+	 * @return the wifi configuration of the wifi AP
+	 */
 	public WifiConfiguration getWifiApConfiguration(WifiManager wifi) {
 		try {
 			Method method1 = wifi.getClass()
@@ -389,7 +444,19 @@ public class WifiAPManager {
 		return null;
 	}
 
-	public boolean setWifiApConfiguration(WifiConfiguration config) {
+	/**
+	 * Set the wifi AP configuration using reflection because the method is
+	 * currently hidden
+	 * 
+	 * @param wifi
+	 *            the android wifi manager which should be used
+	 * @param config
+	 *            the configuration which should be applied
+	 * 
+	 * @return whether the operation was successful
+	 */
+	public boolean setWifiApConfiguration(WifiManager wifi,
+			WifiConfiguration config) {
 		try {
 			Method method1 = wifi.getClass().getMethod(
 					"setWifiApConfiguration", WifiConfiguration.class);

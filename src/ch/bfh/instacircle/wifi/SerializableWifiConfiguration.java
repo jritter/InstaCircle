@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle.wifi;
 
 import java.io.Serializable;
@@ -6,11 +16,14 @@ import java.util.BitSet;
 
 import android.net.wifi.WifiConfiguration;
 
+/**
+ * This is a wrapper class which is used to serialize a WifiConfiguration
+ * object. This is used for backing up the wifi AP configuration.
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ */
 public class SerializableWifiConfiguration implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	public String BSSID;
@@ -27,21 +40,31 @@ public class SerializableWifiConfiguration implements Serializable {
 	public String[] wepKeys;
 	public int wepTxKeyIndex;
 
-	public SerializableWifiConfiguration(WifiConfiguration wificonfiguration) {
-		this.BSSID = wificonfiguration.BSSID;
-		this.SSID = wificonfiguration.SSID;
-		this.allowedAuthAlgorithms = wificonfiguration.allowedAuthAlgorithms;
-		this.allowedGroupCiphers = wificonfiguration.allowedGroupCiphers;
-		this.allowedKeyManagement = wificonfiguration.allowedKeyManagement;
-		this.allowedPairwiseCiphers = wificonfiguration.allowedPairwiseCiphers;
-		this.allowedProtocols = wificonfiguration.allowedProtocols;
-		this.hiddenSSID = wificonfiguration.hiddenSSID;
-		this.preSharedKey = wificonfiguration.preSharedKey;
-		this.priority = wificonfiguration.priority;
-		this.wepKeys = wificonfiguration.wepKeys;
-		this.wepTxKeyIndex = wificonfiguration.wepTxKeyIndex;
+	/**
+	 * @param config
+	 *            The WifiConfiguration object which should be transfered into a
+	 *            serializable object.
+	 */
+	public SerializableWifiConfiguration(WifiConfiguration config) {
+		this.BSSID = config.BSSID;
+		this.SSID = config.SSID;
+		this.allowedAuthAlgorithms = config.allowedAuthAlgorithms;
+		this.allowedGroupCiphers = config.allowedGroupCiphers;
+		this.allowedKeyManagement = config.allowedKeyManagement;
+		this.allowedPairwiseCiphers = config.allowedPairwiseCiphers;
+		this.allowedProtocols = config.allowedProtocols;
+		this.hiddenSSID = config.hiddenSSID;
+		this.preSharedKey = config.preSharedKey;
+		this.priority = config.priority;
+		this.wepKeys = config.wepKeys;
+		this.wepTxKeyIndex = config.wepTxKeyIndex;
 	}
 
+	/**
+	 * Transforms the object back into a WifiConfiguration object.
+	 * 
+	 * @return the newly created WifiConfiguration object
+	 */
 	public WifiConfiguration getWifiConfiguration() {
 		WifiConfiguration config = new WifiConfiguration();
 		if (this.BSSID == null) {
@@ -64,6 +87,11 @@ public class SerializableWifiConfiguration implements Serializable {
 		return config;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
 		return "SerializableWifiConfiguration [BSSID=" + BSSID + ", SSID="
