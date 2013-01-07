@@ -64,7 +64,7 @@ public class UDPBroadcastReceiverThread extends Thread {
 					byte[] cleardata = decrypt(cipherKey.getBytes(),
 							encryptedData);
 
-					if (data != null) {
+					if (cleardata != null) {
 
 						ByteArrayInputStream bis = new ByteArrayInputStream(
 								cleardata);

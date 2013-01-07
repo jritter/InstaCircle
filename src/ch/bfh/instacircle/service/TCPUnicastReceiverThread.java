@@ -28,8 +28,6 @@ public class TCPUnicastReceiverThread extends Thread {
 			.getSimpleName();
 	public ServerSocket serverSocket;
 
-	private static final String PREFS_NAME = "network_preferences";
-
 	NetworkService service;
 
 	private String cipherKey;
@@ -67,22 +65,28 @@ public class TCPUnicastReceiverThread extends Thread {
 					Log.d(TAG, "LENGTH: " + encryptedData.length);
 
 					byte[] data = decrypt(cipherKey.getBytes(), encryptedData);
+					
+					if (data != null) {
 
-					ByteArrayInputStream bis = new ByteArrayInputStream(data);
-					ObjectInput oin = null;
-					try {
-						oin = new ObjectInputStream(bis);
-						msg = (Message) oin.readObject();
-
-					} finally {
-						bis.close();
-						oin.close();
+						ByteArrayInputStream bis = new ByteArrayInputStream(data);
+						ObjectInput oin = null;
+						try {
+							oin = new ObjectInputStream(bis);
+							msg = (Message) oin.readObject();
+	
+						} finally {
+							bis.close();
+							oin.close();
+						}
+	
+						if (!Thread.currentThread().isInterrupted()) {
+							msg.setSenderIPAddress((clientSocket.getInetAddress())
+									.getHostAddress());
+		
+							service.processUnicastMessage(msg);
+						}
+					
 					}
-
-					msg.setSenderIPAddress((clientSocket.getInetAddress())
-							.getHostAddress());
-
-					service.processUnicastMessage(msg);
 				} catch (IOException e) {
 					Log.d(TAG, "Terminating...");
 					serverSocket.close();
@@ -115,20 +119,15 @@ public class TCPUnicastReceiverThread extends Thread {
 			cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 			decrypted = cipher.doFinal(encrypted);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		}
 		return decrypted;
 	}

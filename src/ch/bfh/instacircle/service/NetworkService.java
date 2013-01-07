@@ -199,10 +199,10 @@ public class NetworkService extends Service {
 				LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			}
 			break;
-		case Message.MSG_MSGRESENDREQ:
+		case Message.MSG_RESENDREQ:
 			// should be handled as unicast
 			break;
-		case Message.MSG_MSGRESENDRES:
+		case Message.MSG_RESENDRES:
 			// should be handled as unicast
 			break;
 		case Message.MSG_WHOISTHERE:
@@ -240,7 +240,7 @@ public class NetworkService extends Service {
 				Log.d(TAG, "Messagelist from " + msg.getSender()
 						+ " incomplete, requesting messages...");
 				Message resendRequestMessage = new Message("",
-						Message.MSG_MSGRESENDREQ, getSharedPreferences(
+						Message.MSG_RESENDREQ, getSharedPreferences(
 								PREFS_NAME, 0).getString("identification",
 								"N/A"), -1);
 				new UnicastMessageAsyncTask(msg.getSenderIPAddress())
@@ -298,7 +298,7 @@ public class NetworkService extends Service {
 			Log.d(TAG, "Content...");
 			break;
 
-		case Message.MSG_MSGRESENDREQ:
+		case Message.MSG_RESENDREQ:
 			Log.d(TAG, "Got resendrequest from " + msg.getSender());
 			Cursor myMessages = dbHelper.queryMyMessages();
 			ArrayList<Message> messages = new ArrayList<Message>();
@@ -333,13 +333,13 @@ public class NetworkService extends Service {
 					0).getString("identification", "N/A");
 
 			Message resendMessage = new Message(serializedMessages,
-					Message.MSG_MSGRESENDRES, identification, -1);
+					Message.MSG_RESENDRES, identification, -1);
 
 			new UnicastMessageAsyncTask(msg.getSenderIPAddress())
 					.execute(resendMessage);
 			break;
 
-		case Message.MSG_MSGRESENDRES:
+		case Message.MSG_RESENDRES:
 			Log.d(TAG, "Got all messages from " + msg.getSender());
 
 			try {
@@ -377,7 +377,7 @@ public class NetworkService extends Service {
 				Log.d(TAG, "Messagelist from " + msg.getSender()
 						+ " incomplete, requesting messages...");
 				Message resendRequestMessage = new Message("",
-						Message.MSG_MSGRESENDREQ, getSharedPreferences(
+						Message.MSG_RESENDREQ, getSharedPreferences(
 								PREFS_NAME, 0).getString("identification",
 								"N/A"), -1);
 				new UnicastMessageAsyncTask(msg.getSenderIPAddress())
@@ -441,7 +441,7 @@ public class NetworkService extends Service {
 				s.send(p);
 				s.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				return null;
 			}
 
 			return 0;
@@ -603,15 +603,14 @@ public class NetworkService extends Service {
 			cipher = Cipher.getInstance("AES");
 			cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
 			encrypted = cipher.doFinal(clear);
-			Log.d(TAG, "sent Length: " + encrypted.length);
 		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			return null;
 		} catch (NoSuchPaddingException e) {
-			e.printStackTrace();
+			return null;
 		} catch (InvalidKeyException e) {
-			e.printStackTrace();
+			return null;
 		} catch (IllegalBlockSizeException e) {
-			e.printStackTrace();
+			return null;
 		} catch (BadPaddingException e) {
 			return null;
 		}

@@ -12,12 +12,10 @@ public class Message implements Serializable {
 	public static final int MSG_CONTENT = 1;
 	public static final int MSG_MSGJOIN = 2;
 	public static final int MSG_MSGLEAVE = 3;
-	public static final int MSG_MSGRESENDREQ = 4;
-	public static final int MSG_MSGRESENDRES = 5;
-	public static final int MSG_DISCOVERNETS = 6;
-	public static final int MSG_NETWORKAD = 7;
-	public static final int MSG_WHOISTHERE = 8;
-	public static final int MSG_IAMHERE = 9;
+	public static final int MSG_RESENDREQ = 4;
+	public static final int MSG_RESENDRES = 5;
+	public static final int MSG_WHOISTHERE = 6;
+	public static final int MSG_IAMHERE = 7;
 
 	private String message;
 	private int sequenceNumber = -1;
