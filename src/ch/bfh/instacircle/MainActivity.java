@@ -42,7 +42,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.Toast;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
 
@@ -53,10 +52,11 @@ public class MainActivity extends Activity implements OnClickListener,
 	private static final String TAG = MainActivity.class.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
 
-	private SimpleAdapter adapter;
+	private NetworkArrayAdapter adapter;
 	private AdhocWifiManager adhoc;
 
 	private ArrayList<HashMap<String, Object>> arraylist = new ArrayList<HashMap<String, Object>>();
+	private HashMap<String, Object> lastItem = new HashMap<String, Object>();
 	private Button btnCreateNetwork;
 
 	private ListView lv;
@@ -95,7 +95,6 @@ public class MainActivity extends Activity implements OnClickListener,
 	public void onClick(View v) {
 		if (v == btnCreateNetwork) {
 			Intent intent = new Intent(this, CreateNetworkActivity.class);
-			intent.putExtra("action", "joinnetwork");
 			startActivity(intent);
 		}
 	}
@@ -121,8 +120,8 @@ public class MainActivity extends Activity implements OnClickListener,
 				readOwnerName());
 
 		lv = (ListView) findViewById(R.id.network_listview);
-		btnCreateNetwork = (Button) findViewById(R.id.create_network_button);
-		btnCreateNetwork.setOnClickListener(this);
+//		btnCreateNetwork = (Button) findViewById(R.id.create_network_button);
+//		btnCreateNetwork.setOnClickListener(this);
 
 		txtIdentification = (EditText) findViewById(R.id.identification_edittext);
 		txtIdentification.setText(identification);
@@ -133,11 +132,12 @@ public class MainActivity extends Activity implements OnClickListener,
 
 		wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		adhoc = new AdhocWifiManager(wifi);
-
-		adapter = new SimpleAdapter(this, arraylist,
-				R.layout.list_item_network, new String[] { "SSID",
-						"capabilities" }, new int[] { R.id.content,
-						R.id.description });
+		
+		lastItem.put("SSID", "Create new network...");
+		
+		
+		adapter = new NetworkArrayAdapter(this, R.layout.list_item_network, arraylist);
+		adapter.add(lastItem);
 		lv.setAdapter(adapter);
 		lv.setOnItemClickListener(this);
 
@@ -176,6 +176,7 @@ public class MainActivity extends Activity implements OnClickListener,
 					item.put("object", result);
 					arraylist.add(item);
 				}
+				arraylist.add(lastItem);
 				adapter.notifyDataSetChanged();
 
 			}
@@ -197,10 +198,7 @@ public class MainActivity extends Activity implements OnClickListener,
 					NfcAdapter.EXTRA_NDEF_MESSAGES);
 			Log.d(TAG, "NFC is available");
 			if (rawMsgs != null && !isServiceRunning()) {
-				Log.d(TAG, "Connecting directly!");
 				processNfcTag();
-			} else {
-				Log.d(TAG, "No Tag...");
 			}
 
 			if (nfcAdapter.isEnabled()) {
@@ -229,7 +227,7 @@ public class MainActivity extends Activity implements OnClickListener,
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.main_action_items, menu);
+		inflater.inflate(R.menu.activity_main, menu);
 		return true;
 	}
 
@@ -335,25 +333,32 @@ public class MainActivity extends Activity implements OnClickListener,
 		dialog.dismiss();
 	}
 
-	public void onItemClick(AdapterView<?> listview, View view, int arg2,
-			long arg3) {
+	public void onItemClick(AdapterView<?> listview, View view, int position,
+			long id) {
+		
+		if (listview.getAdapter().getCount() - 1 == position){
+			Intent intent = new Intent(this, CreateNetworkActivity.class);
+			startActivity(intent);
+		}
+		else {
 
-		HashMap<String, Object> hash = (HashMap<String, Object>) listview
-				.getAdapter().getItem(arg2);
-
-		selectedResult = (ScanResult) hash.get("object");
-		selectedNetId = -1;
-
-		if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))) {
-			DialogFragment dialog = new ConnectNetworkDialogFragment(true);
-			dialog.show(getFragmentManager(), TAG);
-		} else if ((Boolean) hash.get("known")) {
-			selectedNetId = (Integer) hash.get("netid");
-			DialogFragment dialog = new ConnectNetworkDialogFragment(false);
-			dialog.show(getFragmentManager(), TAG);
-		} else {
-			DialogFragment dialog = new ConnectNetworkDialogFragment(false);
-			dialog.show(getFragmentManager(), TAG);
+			HashMap<String, Object> hash = (HashMap<String, Object>) listview
+					.getAdapter().getItem(position);
+	
+			selectedResult = (ScanResult) hash.get("object");
+			selectedNetId = -1;
+	
+			if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))) {
+				DialogFragment dialog = new ConnectNetworkDialogFragment(true);
+				dialog.show(getFragmentManager(), TAG);
+			} else if ((Boolean) hash.get("known")) {
+				selectedNetId = (Integer) hash.get("netid");
+				DialogFragment dialog = new ConnectNetworkDialogFragment(false);
+				dialog.show(getFragmentManager(), TAG);
+			} else {
+				DialogFragment dialog = new ConnectNetworkDialogFragment(false);
+				dialog.show(getFragmentManager(), TAG);
+			}
 		}
 	}
 
@@ -484,5 +489,10 @@ public class MainActivity extends Activity implements OnClickListener,
 					+ "\" is not available, cannot connect.");
 			alertDialog.show();
 		}
+	}
+	
+	public void addCreateNetworkItem () {
+		
+		
 	}
 }

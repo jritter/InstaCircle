@@ -44,8 +44,6 @@ public class ParticipantsListFragment extends ListFragment {
 		intentFilter.addAction("participantChangedState");
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, intentFilter);
-		String networkUUID = getActivity().getSharedPreferences(PREFS_NAME, 0)
-				.getString("networkUUID", "");
 		helper = new NetworkDbHelper(getActivity());
 		cursor = helper.queryParticipants();
 

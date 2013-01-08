@@ -115,7 +115,7 @@ public class NetworkService extends Service {
 
 		Notification.Builder notificationBuilder = new Notification.Builder(
 				this);
-		notificationBuilder.setContentTitle("Adhoc Network Chat");
+		notificationBuilder.setContentTitle(getResources().getString(R.string.app_name));
 		notificationBuilder
 				.setContentText("An InstaCircle Chat session is running. Tap to bring in front.");
 		notificationBuilder

@@ -49,7 +49,7 @@ public class UDPBroadcastReceiverThread extends Thread {
 							new byte[socket.getReceiveBufferSize()],
 							socket.getReceiveBufferSize());
 					socket.receive(datagram);
-
+					Log.d(TAG, "Message received...");
 					byte[] data = datagram.getData();
 
 					byte[] length = new byte[4];
@@ -112,19 +112,15 @@ public class UDPBroadcastReceiverThread extends Thread {
 			cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 			decrypted = cipher.doFinal(encrypted);
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		} catch (BadPaddingException e) {
-			e.printStackTrace();
+			return null;
 		}
 		return decrypted;
 	}

@@ -1,7 +1,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent" 
+    android:focusableInTouchMode="true" >
 
     <TextView
         android:id="@+id/identification_textview"
@@ -19,7 +20,20 @@
         android:layout_alignParentLeft="true"
         android:background="@android:color/holo_blue_light"
         android:gravity="center_vertical" />
+    
+    <EditText
+        android:id="@+id/identification_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/identification_separator"
+        android:ems="10"
+        android:hint="@string/your_identification"
+        android:inputType="textPersonName" >
+    </EditText>
 
+    <!-- 
     <View
         android:id="@+id/create_network_separator"
         android:layout_width="fill_parent"
@@ -37,8 +51,6 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:text="@string/create_new_network">
-    
-    	<requestFocus />
     </Button>
 
     <TextView
@@ -49,32 +61,9 @@
         android:layout_alignParentLeft="true"
         android:gravity="center_vertical"
         android:text="@string/create_new_network" />
-
-    <ListView
-        android:id="@+id/network_listview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/create_network_textview"
-        android:layout_below="@+id/join_network_textview"
-        android:layout_centerHorizontal="true" >
-
-    </ListView>
-
-    <EditText
-        android:id="@+id/identification_edittext"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignTop="@+id/identification_separator"
-        android:ems="10"
-        android:hint="@string/your_identification"
-        android:inputType="textPersonName" >
-
-        
-    </EditText>
-
-    <TextView
+ 	-->
+ 	
+ 	<TextView
         android:id="@+id/join_network_textview"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -91,5 +80,18 @@
         android:layout_alignParentLeft="true"
         android:background="@android:color/holo_blue_light"
         android:gravity="center_vertical" />
+ 	
+    <ListView
+        android:id="@+id/network_listview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/join_network_textview"
+        android:layout_centerHorizontal="true" >
+
+    </ListView>
+
+    
+
+    
 
 </RelativeLayout>

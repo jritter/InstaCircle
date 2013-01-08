@@ -16,7 +16,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	// Basic DB parameters
 	private static final String DATABASE_NAME = "network.db";
-	private static final int DATABASE_VERSION = 21;
+	private static final int DATABASE_VERSION = 24;
 
 	// Table names
 	private static final String TABLE_NAME_MESSAGE = "message";

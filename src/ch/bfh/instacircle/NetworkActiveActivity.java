@@ -166,7 +166,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.action_items, menu);
+		inflater.inflate(R.menu.activity_network_active, menu);
 		if (!this.getPackageManager().hasSystemFeature(
 				PackageManager.FEATURE_NFC)) {
 			menu.removeItem(R.id.write_nfc_tag);

@@ -21,7 +21,8 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 	private boolean broadcast = true;
 	private String ipAddress = null;
 
-	Button btnSend;
+	private Button btnSend;
+	private EditText et;
 
 	public MessageSendFragment() {
 
@@ -38,6 +39,7 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 		View rootView = inflater.inflate(R.layout.fragment_message_send,
 				container, false);
 		btnSend = (Button) rootView.findViewById(R.id.send_button);
+		et = (EditText) getActivity().findViewById(R.id.message_text);
 		btnSend.setOnClickListener(this);
 		dbHelper = new NetworkDbHelper(getActivity());
 
@@ -52,9 +54,7 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 	public void onClick(View view) {
 
 		if (view == btnSend) {
-			EditText et = (EditText) getActivity().findViewById(
-					R.id.message_text);
-
+			et = (EditText) getActivity().findViewById(R.id.message_text);
 			String identification = getActivity().getSharedPreferences(
 					PREFS_NAME, 0).getString("identification", "N/A");
 			Message message = new Message(et.getText().toString(),
@@ -85,5 +85,15 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 
 	public String getIpAddress() {
 		return ipAddress;
+	}
+	
+	public void enableControls() {
+		et.setEnabled(true);
+		btnSend.setEnabled(true);
+	}
+	
+	public void disableControls() {
+		et.setEnabled(false);
+		btnSend.setEnabled(false);
 	}
 }
