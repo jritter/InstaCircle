@@ -50,7 +50,7 @@
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/network_name"
         android:layout_marginTop="20dp"
-        android:text="@string/network_pin_label" />
+        android:text="@string/network_wlan_key" />
 
     <EditText
         android:id="@+id/network_pin"

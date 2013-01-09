@@ -142,7 +142,7 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 	}
 
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
-
+		
 	}
 
 	public void afterTextChanged(Editable s) {

@@ -12,7 +12,8 @@
     <string name="menu_settings">Settings</string>
     <string name="title_activity_create_network">MainActivity</string>
     <string name="network_name_label">Network Name</string>
-    <string name="network_pin_label">Network PIN</string>
+    <string name="network_password">Network Password</string>
+    <string name="network_wlan_key">WLAN Key</string>
     <string name="create_network">Create Network</string>
     <string name="tab_title_messages">Messages</string>
     <string name="tab_title_participants">Participants</string>

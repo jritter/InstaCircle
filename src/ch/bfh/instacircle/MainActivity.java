@@ -175,6 +175,7 @@ public class MainActivity extends Activity implements OnClickListener,
 					item.put("capabilities", result.capabilities);
 					item.put("object", result);
 					arraylist.add(item);
+					Log.d(TAG, result.SSID + " known: " + item.get("known") + " netid " + item.get("netid"));
 				}
 				arraylist.add(lastItem);
 				adapter.notifyDataSetChanged();
@@ -348,17 +349,22 @@ public class MainActivity extends Activity implements OnClickListener,
 			selectedResult = (ScanResult) hash.get("object");
 			selectedNetId = -1;
 	
+			DialogFragment dialogFragment;
 			if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))) {
-				DialogFragment dialog = new ConnectNetworkDialogFragment(true);
-				dialog.show(getFragmentManager(), TAG);
+				dialogFragment = new ConnectNetworkDialogFragment(true);
 			} else if ((Boolean) hash.get("known")) {
 				selectedNetId = (Integer) hash.get("netid");
-				DialogFragment dialog = new ConnectNetworkDialogFragment(false);
-				dialog.show(getFragmentManager(), TAG);
+				dialogFragment = new ConnectNetworkDialogFragment(false);
 			} else {
-				DialogFragment dialog = new ConnectNetworkDialogFragment(false);
-				dialog.show(getFragmentManager(), TAG);
+				dialogFragment = new ConnectNetworkDialogFragment(false);
 			}
+			
+			dialogFragment.show(getFragmentManager(), TAG);
+			
+			//AlertDialog dialog = (AlertDialog) dialogFragment.getDialog();
+			//dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+			
+			//((AlertDialog)dialogFragment.getDialog()).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
 		}
 	}
 

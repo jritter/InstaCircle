@@ -86,14 +86,4 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 	public String getIpAddress() {
 		return ipAddress;
 	}
-	
-	public void enableControls() {
-		et.setEnabled(true);
-		btnSend.setEnabled(true);
-	}
-	
-	public void disableControls() {
-		et.setEnabled(false);
-		btnSend.setEnabled(false);
-	}
 }

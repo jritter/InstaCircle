@@ -100,6 +100,7 @@ public class AdhocWifiManager {
 	 */
 	public void connectToNetwork(final String SSID, final String password,
 			final Context context, final boolean startActivity) {
+		Log.d(TAG, "connect using SSID...");
 		new ConnectWifiTask(SSID, password, context, startActivity).execute();
 	}
 
@@ -113,6 +114,7 @@ public class AdhocWifiManager {
 	 *            the android context from which this functionality is used
 	 */
 	public void connectToNetwork(final int networkId, final Context context) {
+		Log.d(TAG, "Connect using netid... " + networkId);
 		new ConnectWifiTask(networkId, context).execute();
 	}
 

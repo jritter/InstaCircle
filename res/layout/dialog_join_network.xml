@@ -11,7 +11,7 @@
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
         android:layout_marginTop="16dp"
-        android:hint="@string/password"
+        android:hint="@string/network_password"
         android:inputType="textPassword" />
     
     <EditText
@@ -22,7 +22,7 @@
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
         android:layout_marginTop="16dp"
-        android:hint="@string/password"
+        android:hint="@string/network_wlan_key"
         android:inputType="textPassword" />
 
 </LinearLayout>

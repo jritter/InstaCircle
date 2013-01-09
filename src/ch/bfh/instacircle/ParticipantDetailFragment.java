@@ -11,8 +11,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.TextView;
 import ch.bfh.instacircle.db.NetworkDbHelper;
@@ -48,6 +46,7 @@ public class ParticipantDetailFragment extends Fragment implements
 			Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.fragment_participant_detail,
 				container, false);
+		
 		return rootView;
 	}
 
@@ -77,8 +76,6 @@ public class ParticipantDetailFragment extends Fragment implements
 	
 	private void updateView(){
 		
-		//MessageSendFragment messageSendFragment = (MessageSendFragment) getFragmentManager().findFragmentById(R.id.fragment_message_send);
-		
 		Cursor participant = dbHelper.queryParticipant(participantId);
 		participant.moveToFirst();
 
@@ -92,19 +89,16 @@ public class ParticipantDetailFragment extends Fragment implements
 			participantStatus.setTextColor(getActivity().getResources()
 					.getColor(android.R.color.holo_orange_light));
 			participantStatus.setText("inactive");
-			//messageSendFragment.disableControls();
 			break;
 		case 1:
 			participantStatus.setTextColor(getActivity().getResources()
 					.getColor(android.R.color.holo_green_light));
 			participantStatus.setText("active");
-			//messageSendFragment.enableControls();
 			break;
 		default:
 			participantStatus.setTextColor(getActivity().getResources()
 					.getColor(android.R.color.holo_red_light));
 			participantStatus.setText("unknown");
-			//messageSendFragment.disableControls();
 			break;
 		}
 

@@ -52,5 +52,5 @@ public class ParticipantDetailActivity extends FragmentActivity {
 	public String getIpAddress() {
 		return ipAddress;
 	}
-
+	
 }
