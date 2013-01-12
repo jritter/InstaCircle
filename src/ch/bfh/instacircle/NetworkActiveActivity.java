@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle;
 
 import java.io.IOException;
@@ -38,19 +48,23 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 import ch.bfh.instacircle.db.NetworkDbHelper;
 import ch.bfh.instacircle.service.NetworkService;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
 import ch.bfh.instacircle.wifi.WifiAPManager;
 
+/**
+ * Activity which is displayed during an active conversation
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ */
+/**
+ * @author tgdriju1
+ *
+ */
 public class NetworkActiveActivity extends FragmentActivity implements
 		ActionBar.TabListener {
 
@@ -58,19 +72,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
 
-	/**
-	 * The {@link android.support.v4.view.PagerAdapter} that will provide
-	 * fragments for each of the sections. We use a
-	 * {@link android.support.v4.app.FragmentPagerAdapter} derivative, which
-	 * will keep every loaded fragment in memory. If this becomes too memory
-	 * intensive, it may be best to switch to a
-	 * {@link android.support.v4.app.FragmentStatePagerAdapter}.
-	 */
 	SectionsPagerAdapter mSectionsPagerAdapter;
 
-	/**
-	 * The {@link ViewPager} that will host the section contents.
-	 */
 	ViewPager mViewPager;
 
 	private WifiManager wifi;
@@ -88,15 +91,20 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	private boolean writeNfcEnabled;
 
 	private boolean repairInitiated;
+	private long repairTime;
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.FragmentActivity#onCreate(android.os.Bundle)
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 		setContentView(R.layout.activity_network_active);
+
 		// Create the adapter that will return a fragment for each of the three
-		// primary sections
-		// of the app.
+		// primary sections of the app.
 		mSectionsPagerAdapter = new SectionsPagerAdapter(
 				getSupportFragmentManager());
 
@@ -107,12 +115,6 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		// Set up the ViewPager with the sections adapter.
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
-
-		// When swiping between different sections, select the corresponding
-		// tab.
-		// We can also use ActionBar.Tab#select() to do this if we have a
-		// reference to the
-		// Tab.
 		mViewPager
 				.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
 					@Override
@@ -121,16 +123,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 					}
 				});
 
-		this.registerReceiver(wifiReceiver, new IntentFilter(
-				WifiManager.WIFI_STATE_CHANGED_ACTION));
-
+		
 		// For each of the sections in the app, add a tab to the action bar.
 		for (int i = 0; i < mSectionsPagerAdapter.getCount(); i++) {
-			// Create a tab with text corresponding to the page title defined by
-			// the adapter.
-			// Also specify this Activity object, which implements the
-			// TabListener interface, as the
-			// listener for when this tab is selected.
 			actionBar.addTab(actionBar.newTab()
 					.setText(mSectionsPagerAdapter.getPageTitle(i))
 					.setTabListener(this));
@@ -140,15 +135,19 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		adhoc = new AdhocWifiManager(wifi);
 		wifiapmanager = new WifiAPManager();
+		registerReceiver(wifiReceiver, new IntentFilter(
+				WifiManager.WIFI_STATE_CHANGED_ACTION));
 
-		// NFC stuff
-
+		// Is NFC available on this device?
 		nfcAvailable = this.getPackageManager().hasSystemFeature(
 				PackageManager.FEATURE_NFC);
 
+		// only set up the NFC stuff if NFC is also available
 		if (nfcAvailable) {
 			nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 			if (nfcAdapter.isEnabled()) {
+				
+				// Setting up a pending intent that is invoked when an NFC tag is tapped on the back
 				pendingIntent = PendingIntent.getActivity(this, 0, new Intent(
 						this, getClass())
 						.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
@@ -163,10 +162,15 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.activity_network_active, menu);
+		
+		// only display the NFC action if NFC is available
 		if (!this.getPackageManager().hasSystemFeature(
 				PackageManager.FEATURE_NFC)) {
 			menu.removeItem(R.id.write_nfc_tag);
@@ -174,13 +178,16 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		return true;
 	}
 
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
 		Intent intent = null;
 		switch (item.getItemId()) {
 		case R.id.display_qrcode:
-
+			// displaying the QR code
 			SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 			String config = preferences.getString("SSID", "N/A") + "||"
 					+ preferences.getString("password", "N/A");
@@ -192,6 +199,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 				intent.putExtra("ENCODE_SHOW_CONTENTS", false);
 				startActivity(intent);
 			} catch (ActivityNotFoundException e) {
+				
+				// if the "Barcode Scanner" application is not installed ask the user if he wants to install it
 				AlertDialog alertDialog = new AlertDialog.Builder(this)
 						.create();
 				alertDialog.setTitle("InstaCircle - Barcode Scanner Required");
@@ -202,6 +211,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 							public void onClick(DialogInterface dialog,
 									int which) {
 								dialog.dismiss();
+								// redirect to Google Play
 								try {
 									startActivity(new Intent(
 											Intent.ACTION_VIEW,
@@ -225,6 +235,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 
 		case R.id.leave_network:
 
+			// Display a confirm dialog asking whether really to leave
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle("Leave Network?");
 			builder.setMessage("Do you really want to leave this conversation?");
@@ -274,6 +285,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		case R.id.write_nfc_tag:
 
 			if (!nfcAdapter.isEnabled()) {
+				
+				// if nfc is available but deactivated ask the user whether he wants to enable it. If yes, redirect to the settings.
 				AlertDialog alertDialog = new AlertDialog.Builder(this)
 						.create();
 				alertDialog.setTitle("InstaCircle - NFC needs to be enabled");
@@ -297,6 +310,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 						});
 				alertDialog.show();
 			} else {
+				// display a progress dialog waiting for the NFC tag to be tapped
 				writeNfcEnabled = true;
 				writeNfcTagDialog = new ProgressDialog(this);
 				writeNfcTagDialog
@@ -320,10 +334,16 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see android.app.ActionBar.TabListener#onTabUnselected(android.app.ActionBar.Tab, android.app.FragmentTransaction)
+	 */
 	public void onTabUnselected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 	}
 
+	/* (non-Javadoc)
+	 * @see android.app.ActionBar.TabListener#onTabSelected(android.app.ActionBar.Tab, android.app.FragmentTransaction)
+	 */
 	public void onTabSelected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 		// When the given tab is selected, switch to the corresponding page in
@@ -331,13 +351,18 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		mViewPager.setCurrentItem(tab.getPosition());
 	}
 
+	/* (non-Javadoc)
+	 * @see android.app.ActionBar.TabListener#onTabReselected(android.app.ActionBar.Tab, android.app.FragmentTransaction)
+	 */
 	public void onTabReselected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 	}
 
+	
 	/**
-	 * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-	 * one of the primary sections of the app.
+	 * FragmentPagerAdapter which handles the tabs
+	 * 
+	 * @author Juerg Ritter (rittj1@bfh.ch)
 	 */
 	public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
@@ -348,7 +373,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 
 			fragments = new ArrayList<Fragment>();
 			fragments.add(new MessageFragment());
-			fragments.add(new ParticipantsFragment());
+			fragments.add(new ParticipantsListFragment());
 			fragments.add(new NetworkInfoFragment());
 		}
 
@@ -364,6 +389,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 
 		@Override
 		public CharSequence getPageTitle(int position) {
+			
+			// set the labels
 			switch (position) {
 			case 0:
 				return getString(R.string.tab_title_messages).toUpperCase();
@@ -376,54 +403,46 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
-	/**
-	 * A dummy fragment representing a section of the app, but that simply
-	 * displays dummy text.
+
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onNewIntent(android.content.Intent)
 	 */
-	public static class DummySectionFragment extends Fragment {
-		public DummySectionFragment() {
-		}
-
-		public static final String ARG_SECTION_NUMBER = "section_number";
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			TextView textView = new TextView(getActivity());
-			textView.setGravity(Gravity.CENTER);
-			Bundle args = getArguments();
-			textView.setText(Integer.toString(args.getInt(ARG_SECTION_NUMBER)));
-			return textView;
-		}
-	}
-
-	// Handle the NFC part...
 	@Override
 	public void onNewIntent(Intent intent) {
 		if (writeNfcEnabled) {
+			// Handle the NFC part...
 
 			SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
 			String text = preferences.getString("SSID", "N/A") + "||"
 					+ preferences.getString("password", "N/A");
 
+			// create a new NdefRecord
 			NdefRecord record = createMimeRecord(
 					"application/ch.bfh.instacircle", text.getBytes());
 
+			// create a new Android Application Record
 			NdefRecord aar = NdefRecord
 					.createApplicationRecord(getPackageName());
 
+			// create a ndef message
 			NdefMessage message = new NdefMessage(new NdefRecord[] { record,
 					aar });
 
+			// extract tag from the intent
 			Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
+			// write the tag
 			writeTag(tag, message);
 
+			// close the dialog
 			writeNfcEnabled = false;
 			writeNfcTagDialog.dismiss();
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onPause()
+	 */
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -432,12 +451,18 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onDestroy()
+	 */
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		unregisterReceiver(wifiReceiver);
 	}
 
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.FragmentActivity#onResume()
+	 */
 	@Override
 	protected void onResume() {
 
@@ -447,16 +472,25 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			nfcAvailable = true;
 		}
 
+		// make sure that this activity is the first one which can handle the NFC tags
 		if (nfcAvailable) {
-			Log.d(TAG, "Enabling foreground Dispatching...");
 			nfcAdapter.enableForegroundDispatch(this, pendingIntent,
 					intentFiltersArray, null);
 		}
 
 		checkNetworkState();
-
 	}
 
+	/**
+	 * Writes an NFC Tag
+	 * 
+	 * @param tag
+	 * 		The reference to the tag
+	 * @param message
+	 * 		the message which should be writen on the message
+	 * @return
+	 * 		true if successful, false otherwise
+	 */
 	public boolean writeTag(Tag tag, NdefMessage message) {
 
 		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
@@ -525,18 +559,20 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		return true;
 	}
 
+	/**
+	 * Broadcast receiver which gets invoked when the network configuration changes
+	 */
 	private BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			checkNetworkState();
-			Log.d(TAG,
-					"State: "
-							+ intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE,
-									WifiManager.WIFI_STATE_UNKNOWN));
 		}
 	};
 
+	/**
+	 * Checks whether the current network configuration is how it is supposed to be
+	 */
 	public void checkNetworkState() {
 		ConnectivityManager conn = (ConnectivityManager) this
 				.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -549,11 +585,14 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		Log.d(TAG, "Currently active SSID: " + ssid);
 		// Only check the state if this device is not an access point
 		if (!wifiapmanager.isWifiAPEnabled(wifi)) {
+			Log.d(TAG, "Configured SSID: " + configuredSsid);
 			if (!(nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED
 					&& nInfo.getState() == NetworkInfo.State.CONNECTED && ssid
 						.equals(configuredSsid))) {
-				if (repairInitiated == false) {
+				if (repairInitiated == false && repairTime + 6000 < System.currentTimeMillis()) {
 					repairInitiated = true;
+					repairTime = System.currentTimeMillis();
+					// create a dialog that ask whether you want to repair the network connection
 					AlertDialog alertDialog = new AlertDialog.Builder(this)
 							.create();
 					alertDialog
@@ -570,6 +609,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 									adhoc.connectToNetwork(configuredSsid,
 											password,
 											NetworkActiveActivity.this, false);
+									repairInitiated = false;
 								}
 							});
 					alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Leave",
@@ -599,7 +639,6 @@ public class NetworkActiveActivity extends FragmentActivity implements
 					alertDialog.show();
 				}
 			} else {
-				Log.d(TAG, "All good! :-)");
 				repairInitiated = false;
 			}
 		}
@@ -610,6 +649,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	 * Creates a custom MIME type encapsulated in an NDEF record
 	 * 
 	 * @param mimeType
+	 * 		The string with the mime type name
 	 */
 	public NdefRecord createMimeRecord(String mimeType, byte[] payload) {
 		byte[] mimeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
@@ -618,6 +658,12 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		return mimeRecord;
 	}
 
+	/**
+	 * checks whether the NetworkService is running or not
+	 * 
+	 * @return
+	 * 		true if service is running, false otherwise
+	 */
 	public boolean isServiceRunning() {
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 		for (RunningServiceInfo service : manager

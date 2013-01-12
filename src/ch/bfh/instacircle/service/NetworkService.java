@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle.service;
 
 import java.io.ByteArrayInputStream;
@@ -21,10 +31,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -55,6 +62,16 @@ import ch.bfh.instacircle.db.NetworkDbHelper;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
 import ch.bfh.instacircle.wifi.WifiAPManager;
 
+/**
+ * This class implements an Android service which runs in the background. It
+ * handles the incoming messages and reacts accordingly.
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ */
+/**
+ * @author tgdriju1
+ * 
+ */
 public class NetworkService extends Service {
 
 	private static final String TAG = NetworkService.class.getSimpleName();
@@ -65,9 +82,6 @@ public class NetworkService extends Service {
 
 	private InetAddress broadcast;
 
-	private Set<String> availableNetworks = Collections
-			.synchronizedSet(new HashSet<String>());
-
 	private NetworkDbHelper dbHelper;
 
 	private UDPBroadcastReceiverThread udpBroadcastReceiverThread;
@@ -75,52 +89,73 @@ public class NetworkService extends Service {
 
 	private String cipherKey;
 
-	public NetworkService() {
-
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Service#onBind(android.content.Intent)
+	 */
 	@Override
 	public IBinder onBind(Intent intent) {
-
 		return null;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Service#onCreate()
+	 */
 	@Override
 	public void onCreate() {
+
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Service#onDestroy()
+	 */
 	@Override
 	public void onDestroy() {
+		// Unregister the receiver which listens for messages to be sent
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(
 				messageSendReceiver);
+
+		// close the DB connection
 		dbHelper.close();
 		super.onDestroy();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
+	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+
+		// Initializing the dbHelper in order to get access to the database
 		dbHelper = new NetworkDbHelper(this);
 
-		Intent myIntent = new Intent(this, NetworkActiveActivity.class);
-		myIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-		myIntent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
-		PendingIntent pIntent = PendingIntent.getActivity(this, 0, myIntent,
-				myIntent.getFlags());
+		// Create a pending intent which will be invoked after tapping on the
+		// Android notification
+		Intent notificationIntent = new Intent(this,
+				NetworkActiveActivity.class);
+		notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		notificationIntent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+		PendingIntent pendingNotificationIntent = PendingIntent.getActivity(
+				this, 0, notificationIntent, notificationIntent.getFlags());
 
-		cipherKey = getSharedPreferences(PREFS_NAME, 0).getString("password",
-				"N/A");
-
-		Log.d(TAG, "Using the cipher key " + cipherKey);
-
+		// Setting up the notification which is being displayed
 		Notification.Builder notificationBuilder = new Notification.Builder(
 				this);
-		notificationBuilder.setContentTitle(getResources().getString(R.string.app_name));
+		notificationBuilder.setContentTitle(getResources().getString(
+				R.string.app_name));
 		notificationBuilder
 				.setContentText("An InstaCircle Chat session is running. Tap to bring in front.");
 		notificationBuilder
 				.setSmallIcon(R.drawable.glyphicons_244_conversation);
-		notificationBuilder.setContentIntent(pIntent);
+		notificationBuilder.setContentIntent(pendingNotificationIntent);
 		notificationBuilder.setOngoing(true);
 		Notification notification = notificationBuilder.getNotification();
 
@@ -128,6 +163,11 @@ public class NetworkService extends Service {
 
 		notificationManager.notify(TAG, 1, notification);
 
+		// Reading the cipher key from the preferences file
+		cipherKey = getSharedPreferences(PREFS_NAME, 0).getString("password",
+				"N/A");
+
+		// Initializing the UDP and the TCP threads and start them
 		udpBroadcastReceiverThread = new UDPBroadcastReceiverThread(this,
 				cipherKey);
 		udpBroadcastReceiverThread.start();
@@ -135,31 +175,35 @@ public class NetworkService extends Service {
 		tcpUnicastReceiverThread = new TCPUnicastReceiverThread(this, cipherKey);
 		tcpUnicastReceiverThread.start();
 
-		Log.d(TAG, "Service started");
-
+		// Register a broadcastreceiver in order to get notification from the UI
+		// when a message should be sent
 		LocalBroadcastManager.getInstance(this).registerReceiver(
 				messageSendReceiver, new IntentFilter("messageSend"));
 
+		// Unfortunately the broadcast address is not available immediately
+		// after the network connection is acutally indicated as ready...
 		do {
 			broadcast = getBroadcastAddress();
 			if (broadcast != null) {
 				break;
 			}
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		} while (broadcast == null);
 
-		Log.d(TAG, "Broadcast Address: " + broadcast.getHostAddress());
-
+		// Opening a conversation
 		dbHelper.openConversation(getSharedPreferences(PREFS_NAME, 0)
 				.getString("password", "N/A"));
 
+		// joining the conversation using the identification in the preferences
+		// file
 		joinNetwork(getSharedPreferences(PREFS_NAME, 0).getString(
 				"identification", "N/A"));
 
+		// start the NetworkActiveActivity
 		intent = new Intent(this, NetworkActiveActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -168,32 +212,40 @@ public class NetworkService extends Service {
 		return super.onStartCommand(intent, flags, startId);
 	}
 
+	/**
+	 * This method is called from the UDPBroadcastReceiver thread and is
+	 * responsible for the actual processing of the incoming broadcast message.
+	 * 
+	 * @param msg
+	 *            the message which should be processed
+	 */
 	public void processBroadcastMessage(Message msg) {
-		Log.d(TAG, "Broadcast Message received...");
+
 		String identification = getSharedPreferences(PREFS_NAME, 0).getString(
 				"identification", "N/A");
-		Intent intent;
-		if (!checkMessageConsistency()) {
-			return;
-		}
 
+		Intent intent;
+
+		// Use the messagetype to determine what to do with the message
 		switch (msg.getMessageType()) {
 
 		case Message.MSG_CONTENT:
-			Log.d(TAG, "Content...");
+			// no special action required, just saving later on...
 			break;
 		case Message.MSG_MSGJOIN:
-			Log.d(TAG, "Join...");
+			// add the new participant to the participants list
 			dbHelper.insertParticipant(msg.getMessage(),
 					msg.getSenderIPAddress());
+
+			// notify the UI
 			intent = new Intent("participantJoined");
 			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			break;
 		case Message.MSG_MSGLEAVE:
-			Log.d(TAG, "Leave...");
+			// decativate the participant
 			dbHelper.updateParticipantState(msg.getSender(), 0);
 
-			// Don't broadcast if I'm the one who left...
+			// Notify the UI, but only if it's not myself who left
 			if (!msg.getSender().equals(identification)) {
 				intent = new Intent("participantChangedState");
 				LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -206,6 +258,8 @@ public class NetworkService extends Service {
 			// should be handled as unicast
 			break;
 		case Message.MSG_WHOISTHERE:
+			// immediately send a unicast response with my own identification
+			// back
 			Message response = new Message(
 					(dbHelper.getNextSequenceNumber() - 1) + "",
 					Message.MSG_IAMHERE, identification, -1);
@@ -216,45 +270,36 @@ public class NetworkService extends Service {
 			// should be handled as unicast
 			break;
 		default:
-			Log.d(TAG, "Default...");
+			// shouldn't happen
 			break;
 		}
 
+		// handling the conversation relevant messages
 		if (Arrays.asList(messagesToSave).contains(msg.getMessageType())) {
 
-			// Check whether participant already exists in the database
-
-			Log.d(TAG,
-					"Got message with sequence number "
-							+ msg.getSequenceNumber());
-			Log.d(TAG,
-					"Expecting sequence Number "
-							+ (dbHelper.getCurrentParticipantSequenceNumber(msg
-									.getSender()) + 1));
-
+			// checking whether the sequence number is the one which we expect
+			// from the participant, otherwise request the missing messages
 			if (msg.getSequenceNumber() != -1
 					&& msg.getSequenceNumber() > dbHelper
 							.getCurrentParticipantSequenceNumber(msg
 									.getSender()) + 1) {
 				// Request missing messages
-				Log.d(TAG, "Messagelist from " + msg.getSender()
-						+ " incomplete, requesting messages...");
 				Message resendRequestMessage = new Message("",
-						Message.MSG_RESENDREQ, getSharedPreferences(
-								PREFS_NAME, 0).getString("identification",
-								"N/A"), -1);
+						Message.MSG_RESENDREQ, getSharedPreferences(PREFS_NAME,
+								0).getString("identification", "N/A"), -1);
 				new UnicastMessageAsyncTask(msg.getSenderIPAddress())
 						.execute(resendRequestMessage);
 			} else {
 				if (dbHelper != null) {
+					// insert the message into the database
 					dbHelper.insertMessage(msg);
 				}
 			}
 		}
 
-		// Stop everything as soon as the own leave message has been processed
 		if (msg.getMessageType() == Message.MSG_MSGLEAVE
 				&& msg.getSender().equals(identification)) {
+			// Stop everything if the leave message is coming from myself
 			tcpUnicastReceiverThread.interrupt();
 			udpBroadcastReceiverThread.interrupt();
 			try {
@@ -277,7 +322,7 @@ public class NetworkService extends Service {
 			intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 			startActivity(intent);
 		} else {
-
+			// otherwise notify the UI that a new message has been arrived
 			intent = new Intent("messageArrived");
 			intent.putExtra("message", msg);
 			LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -285,21 +330,25 @@ public class NetworkService extends Service {
 
 	}
 
+	/**
+	 * This method is called from the TCPUnicastReceiver thread and is
+	 * responsible for the actual processing of the incoming unicast message.
+	 * 
+	 * @param msg
+	 *            the message which should be processed
+	 */
 	public void processUnicastMessage(Message msg) {
-		Log.d(TAG, "Broadcast Message received...");
 
-		if (!checkMessageConsistency()) {
-			return;
-		}
-
+		// Use the messagetype to determine what to do with the message
 		switch (msg.getMessageType()) {
 
 		case Message.MSG_CONTENT:
-			Log.d(TAG, "Content...");
+			// no special action required, just saving later on...
 			break;
 
 		case Message.MSG_RESENDREQ:
-			Log.d(TAG, "Got resendrequest from " + msg.getSender());
+			// as soon as a resend request arrives we query the messages, stuff
+			// them into an array and send the result back
 			Cursor myMessages = dbHelper.queryMyMessages();
 			ArrayList<Message> messages = new ArrayList<Message>();
 			// iterate over cursor
@@ -340,14 +389,18 @@ public class NetworkService extends Service {
 			break;
 
 		case Message.MSG_RESENDRES:
-			Log.d(TAG, "Got all messages from " + msg.getSender());
 
+			// handling the resend response
 			try {
+				// deserializing the content into an ArrayList containing
+				// messages
 				ObjectInputStream ois = new ObjectInputStream(
 						new ByteArrayInputStream(Base64.decode(
 								msg.getMessage(), Base64.DEFAULT)));
 				ArrayList<Message> deserializedMessages = (ArrayList<Message>) ois
 						.readObject();
+				// iterate over the list and hanling them as if they had just
+				// arrived as broadcasts
 				for (Message message : deserializedMessages) {
 					Log.d(TAG, "Reprocessing message...");
 					message.setSenderIPAddress(msg.getSenderIPAddress());
@@ -360,14 +413,9 @@ public class NetworkService extends Service {
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-
 			break;
 
 		case Message.MSG_IAMHERE:
-			Log.d(TAG,
-					"Got I am here message from " + msg.getSender()
-							+ " with Sequence number "
-							+ Integer.parseInt(msg.getMessage()));
 
 			// Check if the received sequence number is bigger than the one we
 			// have in our db, request messages if true
@@ -377,9 +425,8 @@ public class NetworkService extends Service {
 				Log.d(TAG, "Messagelist from " + msg.getSender()
 						+ " incomplete, requesting messages...");
 				Message resendRequestMessage = new Message("",
-						Message.MSG_RESENDREQ, getSharedPreferences(
-								PREFS_NAME, 0).getString("identification",
-								"N/A"), -1);
+						Message.MSG_RESENDREQ, getSharedPreferences(PREFS_NAME,
+								0).getString("identification", "N/A"), -1);
 				new UnicastMessageAsyncTask(msg.getSenderIPAddress())
 						.execute(resendRequestMessage);
 			}
@@ -393,15 +440,18 @@ public class NetworkService extends Service {
 			dbHelper.insertMessage(msg);
 		}
 
+		// notify the UI that new message has been arrived
 		Intent intent = new Intent("messageArrived");
 		intent.putExtra("message", msg);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
-	private boolean checkMessageConsistency() {
-		return true;
-	}
-
+	/**
+	 * AsyncTask which encapsulates the sending a broadcast message over the UDP
+	 * channel into a separate thread
+	 * 
+	 * @author Juerg Ritter (rittj1@bfh.ch)
+	 */
 	private class BroadcastMessageAsyncTask extends
 			AsyncTask<Message, Integer, Integer> {
 
@@ -413,15 +463,18 @@ public class NetworkService extends Service {
 				broadcast = getBroadcastAddress();
 			}
 
-			Log.d(TAG, "Broadcasting message");
-
 			try {
+				// serializing the message
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				ObjectOutput out = new ObjectOutputStream(bos);
 				out.writeObject(msg[0]);
 				byte[] bytes = bos.toByteArray();
+
+				// encrypt the message
 				byte[] encryptedBytes = encrypt(cipherKey.getBytes(), bytes);
 
+				// creating a byte array of 4 bytes to put the lenght of the
+				// payload
 				ByteBuffer b = ByteBuffer.allocate(4);
 				b.putInt(encryptedBytes.length);
 				byte[] length = b.array();
@@ -429,10 +482,12 @@ public class NetworkService extends Service {
 				byte[] bytesToSend = new byte[length.length
 						+ encryptedBytes.length];
 
+				// contatenate the length and the payload
 				System.arraycopy(length, 0, bytesToSend, 0, length.length);
 				System.arraycopy(encryptedBytes, 0, bytesToSend, length.length,
 						encryptedBytes.length);
 
+				// setting up the datagram and sending it
 				s = new DatagramSocket();
 				s.setBroadcast(true);
 				s.setReuseAddress(true);
@@ -448,6 +503,12 @@ public class NetworkService extends Service {
 		}
 	}
 
+	/**
+	 * AsyncTask which encapsulates the sending a unicast message over the TCP
+	 * channel into a separate thread
+	 * 
+	 * @author Juerg Ritter (rittj1@bfh.ch)
+	 */
 	private class UnicastMessageAsyncTask extends
 			AsyncTask<Message, Integer, Integer> {
 
@@ -464,18 +525,22 @@ public class NetworkService extends Service {
 				broadcast = getBroadcastAddress();
 			}
 
-			Log.d(TAG, "Sending message to " + destinationAddr);
-
 			try {
+				// serializing the message
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				ObjectOutput out = new ObjectOutputStream(bos);
 				out.writeObject(msg[0]);
 
 				byte[] bytes = bos.toByteArray();
+
+				// encrypt the message
 				byte[] encryptedBytes = encrypt(cipherKey.getBytes(), bytes);
+
 				s = new Socket(destinationAddr, 12345);
 				out.close();
 
+				// creating a byte array of 4 bytes to put the lenght of the
+				// payload
 				ByteBuffer b = ByteBuffer.allocate(4);
 				b.putInt(encryptedBytes.length);
 				byte[] length = b.array();
@@ -483,10 +548,12 @@ public class NetworkService extends Service {
 				byte[] bytesToSend = new byte[length.length
 						+ encryptedBytes.length];
 
+				// contatenate the length and the payload
 				System.arraycopy(length, 0, bytesToSend, 0, length.length);
 				System.arraycopy(encryptedBytes, 0, bytesToSend, length.length,
 						encryptedBytes.length);
 
+				// send the data
 				DataOutputStream dOut = new DataOutputStream(
 						s.getOutputStream());
 				dOut.write(bytesToSend);
@@ -496,32 +563,40 @@ public class NetworkService extends Service {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
 			return 0;
 		}
 	}
 
+	/**
+	 * Implementation of a BroadcastReceiver in order to receive the
+	 * notification that the UI wants to send a message
+	 */
 	private BroadcastReceiver messageSendReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-
+			// extract the broadcast flag from the intent
 			boolean broadcast = intent.getBooleanExtra("broadcast", true);
 
-			Log.d(TAG, "Localbroadcastreceiver got called...");
-			// Get extra data included in the Intent
+			// extract the message from the intent
 			Message msg = (Message) intent.getSerializableExtra("message");
 
 			if (broadcast) {
-				Log.d(TAG, "sending Broadcast message");
+				// sending as broadcast
 				new BroadcastMessageAsyncTask().execute(msg);
 			} else {
-				Log.d(TAG, "sending Unicast message");
+				// sending as unicast
 				new UnicastMessageAsyncTask(intent.getStringExtra("ipAddress"))
 						.execute(msg);
 			}
 		}
 	};
 
+	/**
+	 * Method to extract the broadcastaddress of the current network
+	 * configuration
+	 * 
+	 * @return The broadcast address
+	 */
 	public InetAddress getBroadcastAddress() {
 		InetAddress found_bcast_address = null;
 		System.setProperty("java.net.preferIPv4Stack", "true");
@@ -536,10 +611,6 @@ public class NetworkService extends Service {
 							.getInterfaceAddresses()) {
 
 						found_bcast_address = interfaceAddress.getBroadcast();
-
-						// found_bcast_address =
-						// found_bcast_address.substring(1);
-
 					}
 					if (found_bcast_address != null) {
 						Log.d(TAG, "found p2p Broadcast address: "
@@ -547,7 +618,6 @@ public class NetworkService extends Service {
 						break;
 					}
 				}
-
 			}
 
 			if (found_bcast_address == null) {
@@ -580,6 +650,12 @@ public class NetworkService extends Service {
 		return found_bcast_address;
 	}
 
+	/**
+	 * Helper method which assembles and send a join message and a whoisthere
+	 * message right afterwards
+	 * 
+	 * @param identification
+	 */
 	private void joinNetwork(String identification) {
 
 		Message joinMessage = new Message(identification, Message.MSG_MSGJOIN,
@@ -591,13 +667,25 @@ public class NetworkService extends Service {
 		new BroadcastMessageAsyncTask().execute(whoisthereMessage);
 	}
 
+	/**
+	 * Method which de data using a key
+	 * 
+	 * @param rawSeed
+	 *            The symetric key as byte array
+	 * @param clear
+	 *            The data which should be encrypted
+	 * @return The encrypted bytes
+	 */
 	private byte[] encrypt(byte[] rawSeed, byte[] clear) {
 		Cipher cipher;
 		MessageDigest digest;
 		byte[] encrypted = null;
 		try {
+			// we need a 256 bit key, let's use a SHA-256 hash of the rawSeed
+			// for that
 			digest = MessageDigest.getInstance("SHA-256");
 			digest.reset();
+
 			SecretKeySpec skeySpec = new SecretKeySpec(digest.digest(rawSeed),
 					"AES");
 			cipher = Cipher.getInstance("AES");

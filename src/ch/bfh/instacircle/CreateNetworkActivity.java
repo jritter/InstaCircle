@@ -61,7 +61,7 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 
 		if (wifiapman.isWifiAPEnabled(wifiman)) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setTitle("WiFi AP");
+			builder.setTitle("InstaCircle - WiFi AP");
 			builder.setMessage("The Wifi AP already enabled. Use this connection?");
 			builder.setPositiveButton("Yes",
 					new DialogInterface.OnClickListener() {
@@ -142,7 +142,7 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 	}
 
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
-		
+
 	}
 
 	public void afterTextChanged(Editable s) {

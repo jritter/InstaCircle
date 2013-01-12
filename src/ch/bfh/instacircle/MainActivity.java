@@ -120,8 +120,8 @@ public class MainActivity extends Activity implements OnClickListener,
 				readOwnerName());
 
 		lv = (ListView) findViewById(R.id.network_listview);
-//		btnCreateNetwork = (Button) findViewById(R.id.create_network_button);
-//		btnCreateNetwork.setOnClickListener(this);
+		// btnCreateNetwork = (Button) findViewById(R.id.create_network_button);
+		// btnCreateNetwork.setOnClickListener(this);
 
 		txtIdentification = (EditText) findViewById(R.id.identification_edittext);
 		txtIdentification.setText(identification);
@@ -132,11 +132,11 @@ public class MainActivity extends Activity implements OnClickListener,
 
 		wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		adhoc = new AdhocWifiManager(wifi);
-		
+
 		lastItem.put("SSID", "Create new network...");
-		
-		
-		adapter = new NetworkArrayAdapter(this, R.layout.list_item_network, arraylist);
+
+		adapter = new NetworkArrayAdapter(this, R.layout.list_item_network,
+				arraylist);
 		adapter.add(lastItem);
 		lv.setAdapter(adapter);
 		lv.setOnItemClickListener(this);
@@ -175,7 +175,8 @@ public class MainActivity extends Activity implements OnClickListener,
 					item.put("capabilities", result.capabilities);
 					item.put("object", result);
 					arraylist.add(item);
-					Log.d(TAG, result.SSID + " known: " + item.get("known") + " netid " + item.get("netid"));
+					Log.d(TAG, result.SSID + " known: " + item.get("known")
+							+ " netid " + item.get("netid"));
 				}
 				arraylist.add(lastItem);
 				adapter.notifyDataSetChanged();
@@ -336,19 +337,18 @@ public class MainActivity extends Activity implements OnClickListener,
 
 	public void onItemClick(AdapterView<?> listview, View view, int position,
 			long id) {
-		
-		if (listview.getAdapter().getCount() - 1 == position){
+
+		if (listview.getAdapter().getCount() - 1 == position) {
 			Intent intent = new Intent(this, CreateNetworkActivity.class);
 			startActivity(intent);
-		}
-		else {
+		} else {
 
 			HashMap<String, Object> hash = (HashMap<String, Object>) listview
 					.getAdapter().getItem(position);
-	
+
 			selectedResult = (ScanResult) hash.get("object");
 			selectedNetId = -1;
-	
+
 			DialogFragment dialogFragment;
 			if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))) {
 				dialogFragment = new ConnectNetworkDialogFragment(true);
@@ -358,13 +358,13 @@ public class MainActivity extends Activity implements OnClickListener,
 			} else {
 				dialogFragment = new ConnectNetworkDialogFragment(false);
 			}
-			
+
 			dialogFragment.show(getFragmentManager(), TAG);
-			
-			//AlertDialog dialog = (AlertDialog) dialogFragment.getDialog();
-			//dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-			
-			//((AlertDialog)dialogFragment.getDialog()).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+
+			// AlertDialog dialog = (AlertDialog) dialogFragment.getDialog();
+			// dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+
+			// ((AlertDialog)dialogFragment.getDialog()).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
 		}
 	}
 
@@ -496,9 +496,8 @@ public class MainActivity extends Activity implements OnClickListener,
 			alertDialog.show();
 		}
 	}
-	
-	public void addCreateNetworkItem () {
-		
-		
+
+	public void addCreateNetworkItem() {
+
 	}
 }

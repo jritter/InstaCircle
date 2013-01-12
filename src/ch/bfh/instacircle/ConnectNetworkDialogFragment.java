@@ -42,7 +42,7 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 	private String networkKey;
 
 	private boolean showNetworkKeyField;
-	
+
 	private AlertDialog dialog;
 
 	public ConnectNetworkDialogFragment(boolean showNetworkKeyField) {
@@ -60,7 +60,7 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 
 		txtPassword = (EditText) view.findViewById(R.id.password);
 		txtPassword.addTextChangedListener(this);
-		
+
 		txtNetworkKey = (EditText) view.findViewById(R.id.networkkey);
 		txtNetworkKey.addTextChangedListener(this);
 
@@ -81,7 +81,7 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 								.onDialogPositiveClick(ConnectNetworkDialogFragment.this);
 					}
 				});
-		
+
 		builder.setNegativeButton(R.string.cancel,
 				new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int id) {
@@ -91,17 +91,19 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 								.onDialogNegativeClick(ConnectNetworkDialogFragment.this);
 					}
 				});
-		
+
+		builder.setTitle("InstaCircle - Network Password");
+
 		dialog = builder.create();
 
-		
 		dialog.setOnShowListener(new OnShowListener() {
-			
+
 			public void onShow(DialogInterface dialog) {
-				((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+				((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE)
+						.setEnabled(false);
 			}
 		});
-		
+
 		return dialog;
 	}
 
@@ -129,25 +131,26 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 	}
 
 	public void afterTextChanged(Editable s) {
-		
-		Button joinButton = ((AlertDialog)this.getDialog()).getButton(AlertDialog.BUTTON_POSITIVE);
-		
+
+		Button joinButton = ((AlertDialog) this.getDialog())
+				.getButton(AlertDialog.BUTTON_POSITIVE);
+
 		// handling the activation of the buttons
-		if (showNetworkKeyField){
-			// activate only if there is at least one character in the password field and 8 characters in the network key field
-			if (txtPassword.getText().toString().length() < 1 || txtNetworkKey.getText().toString().length() < 8){
+		if (showNetworkKeyField) {
+			// activate only if there is at least one character in the password
+			// field and 8 characters in the network key field
+			if (txtPassword.getText().toString().length() < 1
+					|| txtNetworkKey.getText().toString().length() < 8) {
 				joinButton.setEnabled(false);
-			}
-			else {
+			} else {
 				joinButton.setEnabled(true);
 			}
-		}
-		else {
-			// activate only if there is at least one character in the password field
-			if (txtPassword.getText().toString().length() < 1){
+		} else {
+			// activate only if there is at least one character in the password
+			// field
+			if (txtPassword.getText().toString().length() < 1) {
 				joinButton.setEnabled(false);
-			}
-			else {
+			} else {
 				joinButton.setEnabled(true);
 			}
 		}
@@ -158,10 +161,10 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 	}
 
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
-		
+
 	}
 
-	public void onClick(View arg0) {
-		
+	public void onClick(View view) {
+
 	}
 }

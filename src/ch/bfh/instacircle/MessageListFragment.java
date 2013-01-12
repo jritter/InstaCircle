@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle;
 
 import android.content.BroadcastReceiver;
@@ -12,15 +22,18 @@ import android.view.View;
 import android.widget.ListView;
 import ch.bfh.instacircle.db.NetworkDbHelper;
 
+/**
+ * This class implements the fragment which lists all the messages of the
+ * conversation (left tab of the NetworkActiveActivity)
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ */
 public class MessageListFragment extends ListFragment {
 
-	private static final String TAG = MessageListFragment.class.getSimpleName();
 	private static final String STATE_ACTIVATED_POSITION = "activated_position";
-	private static final String PREFS_NAME = "network_preferences";
 
 	private int mActivatedPosition = ListView.INVALID_POSITION;
 
-	// private SimpleCursorAdapter sca;
 	private MessageCursorAdapter mca;
 
 	private Cursor cursor;
@@ -30,29 +43,30 @@ public class MessageListFragment extends ListFragment {
 		public void onItemSelected(String id);
 	}
 
-	private static Callbacks sDummyCallbacks = new Callbacks() {
-		public void onItemSelected(String id) {
-		}
-	};
-
-	public MessageListFragment() {
-	}
-
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.Fragment#onCreate(android.os.Bundle)
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		// Subscribing to the messageArrived events to update immediately
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, new IntentFilter("messageArrived"));
+		
+		// getting access to the database and query it
 		helper = new NetworkDbHelper(getActivity());
 		cursor = helper.queryMessages();
 
+		// initializing the adapter and assign it to myself
 		mca = new MessageCursorAdapter(getActivity(), cursor);
-
 		setListAdapter(mca);
 
 	}
 
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.ListFragment#onViewCreated(android.view.View, android.os.Bundle)
+	 */
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
@@ -65,6 +79,9 @@ public class MessageListFragment extends ListFragment {
 		this.getListView().setTranscriptMode(2);
 	}
 
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.Fragment#onSaveInstanceState(android.os.Bundle)
+	 */
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
@@ -73,12 +90,18 @@ public class MessageListFragment extends ListFragment {
 		}
 	}
 
+	/**
+	 * @param activateOnItemClick
+	 */
 	public void setActivateOnItemClick(boolean activateOnItemClick) {
 		getListView().setChoiceMode(
 				activateOnItemClick ? ListView.CHOICE_MODE_SINGLE
 						: ListView.CHOICE_MODE_NONE);
 	}
 
+	/**
+	 * @param position
+	 */
 	public void setActivatedPosition(int position) {
 		if (position == ListView.INVALID_POSITION) {
 			getListView().setItemChecked(mActivatedPosition, false);
@@ -89,6 +112,9 @@ public class MessageListFragment extends ListFragment {
 		mActivatedPosition = position;
 	}
 
+	/* (non-Javadoc)
+	 * @see android.support.v4.app.Fragment#onDestroy()
+	 */
 	@Override
 	public void onDestroy() {
 		// Unregister since the activity is about to be closed.
@@ -97,17 +123,13 @@ public class MessageListFragment extends ListFragment {
 		super.onDestroy();
 	}
 
+	/**
+	 * we need to update the view as soon as a new message arrives
+	 */
 	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			mca.changeCursor(helper.queryMessages());
 		}
 	};
-
-	@Override
-	public void onDestroyView() {
-		// TODO Auto-generated method stub
-		super.onDestroyView();
-	}
-
 }

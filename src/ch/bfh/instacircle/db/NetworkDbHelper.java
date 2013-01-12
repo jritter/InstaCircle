@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle.db;
 
 import android.content.ContentValues;
@@ -9,6 +19,13 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import ch.bfh.instacircle.Message;
 
+/**
+ * This class implements a SQLiteOpenHelper which provides the query methods
+ * which are used in the application. This is the only component of the
+ * application which communicates directly to the SQLite database.
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ */
 public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	private static final String TAG = NetworkDbHelper.class.getSimpleName();
@@ -16,7 +33,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	// Basic DB parameters
 	private static final String DATABASE_NAME = "network.db";
-	private static final int DATABASE_VERSION = 24;
+	private static final int DATABASE_VERSION = 25;
 
 	// Table names
 	private static final String TABLE_NAME_MESSAGE = "message";
@@ -49,6 +66,10 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	private Context context;
 	private String identification;
 
+	/**
+	 * @param context
+	 *            The context from which it being invoked
+	 */
 	public NetworkDbHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		this.context = context;
@@ -56,9 +77,17 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 				"identification", "N/A");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.database.sqlite.SQLiteOpenHelper#onCreate(android.database.sqlite
+	 * .SQLiteDatabase)
+	 */
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 
+		// Create the schema if it is not there
 		String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME_CONVERSATION
 				+ " (" + CONVERSATION_ID + " INTEGER PRIMARY KEY, "
 				+ CONVERSATION_KEY + " TEXT, " + CONVERSATION_START
@@ -90,8 +119,17 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		db.execSQL(sql);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.database.sqlite.SQLiteOpenHelper#onUpgrade(android.database.sqlite
+	 * .SQLiteDatabase, int, int)
+	 */
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+		// drop the schema if there is a new version
 		Log.w(TAG, "DB Upgrade from Version " + oldVersion + " to version "
 				+ newVersion);
 		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_CONVERSATION);
@@ -100,8 +138,16 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		onCreate(db);
 	}
 
-	public void insertMessage(Message message) {
+	/**
+	 * Stores a message in the database
+	 * 
+	 * @param message
+	 *            The message which should be inserted
+	 * @return the row number which has been created
+	 */
+	public long insertMessage(Message message) {
 		long rowId = -1;
+
 		Log.d(TAG, "Inserting Message: " + message.toString());
 		try {
 			SQLiteDatabase db = getWritableDatabase();
@@ -114,12 +160,23 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			values.put(MESSAGES_TIMESTAMP, message.getTimestamp());
 			rowId = db.insert(TABLE_NAME_MESSAGE, null, values);
 		} catch (SQLiteException e) {
-			Log.e(TAG, "insert()", e);
+
 		} finally {
-			Log.d(TAG, "insert(): rowId=" + rowId);
+
 		}
+		return rowId;
 	}
 
+	/**
+	 * Returns the the primary key of a participant based on the identification
+	 * and the primary key of the conversation
+	 * 
+	 * @param participantIdentification
+	 *            the identification of the participant
+	 * @param conversationId
+	 *            the conversation id which should be considered for searching
+	 * @return the participant's primary key
+	 */
 	public long getParticipantID(String participantIdentification,
 			long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
@@ -131,11 +188,26 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return c.getLong(c.getColumnIndex("_id"));
 	}
 
+	/**
+	 * Returns the the primary key of a participant based on the identification.
+	 * It will search in the currently open conversation.
+	 * 
+	 * @param participantIdentification
+	 *            the identification of the participant
+	 * @return the participant's primary key
+	 */
 	public long getParticipantID(String participantIdentification) {
 		return getParticipantID(participantIdentification,
 				getOpenConversationId());
 	}
 
+	/**
+	 * Returns a Cursor object with the details of a given participant
+	 * 
+	 * @param participantId
+	 *            the primary key of the participant
+	 * @return the cursor object containing the details of the participant
+	 */
 	public Cursor queryParticipant(int participantId) {
 		SQLiteDatabase db = getReadableDatabase();
 		String sql = "SELECT * FROM participant p WHERE _id = " + participantId;
@@ -143,6 +215,18 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return c;
 	}
 
+	/**
+	 * Inserts a participant into the database and relates it to a conversation
+	 * 
+	 * @param participantIdentification
+	 *            the identification of the participant
+	 * @param ipAddress
+	 *            the IP address of the participant
+	 * @param conversationId
+	 *            the primary key of the conversation to which this participant
+	 *            belongs
+	 * @return the row number which has been created
+	 */
 	public long insertParticipant(String participantIdentification,
 			String ipAddress, long conversationId) {
 		long rowId = -1;
@@ -175,12 +259,30 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return rowId;
 	}
 
+	/**
+	 * Inserts a participant into the database and relates it to the currently
+	 * open conversation
+	 * 
+	 * @param participantIdentification
+	 *            the identification of the participant
+	 * @param ipAddress
+	 *            the IP address of the participant
+	 * @return the row number which has been created
+	 */
 	public long insertParticipant(String participantIdentification,
 			String ipAddress) {
 		return insertParticipant(participantIdentification, ipAddress,
 				getOpenConversationId());
 	}
 
+	/**
+	 * Assignes a given participant a new state
+	 * 
+	 * @param participantIdentification
+	 *            the identification of the participant which should be updated
+	 * @param newState
+	 *            The new state as an integer
+	 */
 	public void updateParticipantState(String participantIdentification,
 			int newState) {
 		SQLiteDatabase db = getWritableDatabase();
@@ -190,6 +292,14 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 				+ " = '" + participantIdentification + "'", null);
 	}
 
+	/**
+	 * Returns a cursor containing all the messages of a given conversation
+	 * 
+	 * @param conversationId
+	 *            the primary key of the conversation which should be queried
+	 * @return the cursor object containing all the messages of a given
+	 *         conversation
+	 */
 	public Cursor queryMessages(long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
 
@@ -203,10 +313,26 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return c;
 	}
 
+	/**
+	 * Returns a cursor containing all the messages of the currently open
+	 * conversation
+	 * 
+	 * @return the cursor object containing all the messages of the currently
+	 *         open conversation
+	 */
 	public Cursor queryMessages() {
 		return queryMessages(getOpenConversationId());
 	}
 
+	/**
+	 * Returns a cursor containing all the messages of myself in a given
+	 * conversation
+	 * 
+	 * @param conversationId
+	 *            the primary key of the conversation which should be queried
+	 * @return the cursor object containing all the messages of myself in a
+	 *         given conversation
+	 */
 	public Cursor queryMyMessages(long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
 		String myIdentification = context.getSharedPreferences(
@@ -222,10 +348,25 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return c;
 	}
 
+	/**
+	 * Returns a cursor containing all the messages of myself in the currently
+	 * open conversation
+	 * 
+	 * @return the cursor object containing all the messages of myself in the
+	 *         currently open conversation
+	 */
 	public Cursor queryMyMessages() {
 		return queryMyMessages(getOpenConversationId());
 	}
 
+	/**
+	 * Returns a cursor containing all the participants of a given conversation
+	 * 
+	 * @param conversationId
+	 *            the primary key of the conversation which should be queried
+	 * @return the cursor object containing all the participants of a given
+	 *         conversation
+	 */
 	public Cursor queryParticipants(long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
 		String sql = "SELECT p." + PARTICIPANT_ID + ", p."
@@ -239,10 +380,25 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return c;
 	}
 
+	/**
+	 * Returns a cursor containing all the participants of the currently open
+	 * conversation
+	 * 
+	 * @return the cursor object containing all the participants of the
+	 *         currently open conversation
+	 */
 	public Cursor queryParticipants() {
 		return queryParticipants(getOpenConversationId());
 	}
 
+	/**
+	 * Opens a conversation with a certain key. If there is already a
+	 * conversation with this key it will reopen this conversation.
+	 * 
+	 * @param key
+	 *            The cipher key which should be used in this conversation
+	 * @return the row number which has been created
+	 */
 	public long openConversation(String key) {
 		long rowId = -1;
 		closeConversation();
@@ -271,6 +427,9 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return rowId;
 	}
 
+	/**
+	 * Closes all the open conversations
+	 */
 	public void closeConversation() {
 		SQLiteDatabase db = getWritableDatabase();
 		ContentValues values = new ContentValues();
@@ -280,6 +439,11 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 				null);
 	}
 
+	/**
+	 * Returns the primary key of the currently open conversation
+	 * 
+	 * @return the primary key of the currently open conversation
+	 */
 	public long getOpenConversationId() {
 		SQLiteDatabase db = getReadableDatabase();
 		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE "
@@ -294,8 +458,13 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		}
 	}
 
+	/**
+	 * 
+	 * Returns the sequence number which should be used for my next message
+	 * 
+	 * @return the sequence number which should be used for my next message
+	 */
 	public int getNextSequenceNumber() {
-
 		long conversationId = getOpenConversationId();
 
 		SQLiteDatabase db = getReadableDatabase();
@@ -309,11 +478,17 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		Cursor c = db.rawQuery(query, null);
 		c.moveToFirst();
 		int nextSequenceNumber = c.getInt(0) + 1;
-		Log.d(TAG, "New Sequence number: " + nextSequenceNumber);
 		c.close();
 		return nextSequenceNumber;
 	}
 
+	/**
+	 * Returns the cipher key of a given conversation
+	 * 
+	 * @param conversationId
+	 *            the primary key of the conversation which should be queried
+	 * @return the cipher key
+	 */
 	public String getCipherKey(long conversationId) {
 		SQLiteDatabase db = getReadableDatabase();
 		String query = "select " + CONVERSATION_KEY + " from "
@@ -328,10 +503,23 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 
 	}
 
+	/**
+	 * Returns the cipher key of the currently open conversation
+	 * 
+	 * @return the cipher key
+	 */
 	public String getCipherKey() {
 		return getCipherKey(getOpenConversationId());
 	}
 
+	/**
+	 * 
+	 * Returns the currently known sequence number of a given participant
+	 * 
+	 * @param identification
+	 *            the identification of the participant
+	 * @return the sequence number
+	 */
 	public int getCurrentParticipantSequenceNumber(String identification) {
 
 		long conversationId = getOpenConversationId();
@@ -356,6 +544,13 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		return sequenceNumber;
 	}
 
+	/**
+	 * Checks whether a participant is already known in the database
+	 * 
+	 * @param identification
+	 *            the identification of the participant
+	 * @return true if known, false if unknown
+	 */
 	public boolean isParticipantKnown(String identification) {
 
 		boolean participantKnown = false;

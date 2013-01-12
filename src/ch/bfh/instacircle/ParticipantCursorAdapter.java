@@ -24,7 +24,6 @@ public class ParticipantCursorAdapter extends CursorAdapter {
 		content.setText(cursor.getString(cursor
 				.getColumnIndex("identification")));
 
-
 		switch (cursor.getInt(cursor.getColumnIndex("state"))) {
 		case 0:
 			description.setText("inactive participant");
