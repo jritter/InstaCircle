@@ -60,10 +60,7 @@ import ch.bfh.instacircle.wifi.WifiAPManager;
  * Activity which is displayed during an active conversation
  * 
  * @author Juerg Ritter (rittj1@bfh.ch)
- */
-/**
- * @author tgdriju1
- *
+ * 
  */
 public class NetworkActiveActivity extends FragmentActivity implements
 		ActionBar.TabListener {
@@ -123,7 +120,6 @@ public class NetworkActiveActivity extends FragmentActivity implements
 					}
 				});
 
-		
 		// For each of the sections in the app, add a tab to the action bar.
 		for (int i = 0; i < mSectionsPagerAdapter.getCount(); i++) {
 			actionBar.addTab(actionBar.newTab()
@@ -146,8 +142,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		if (nfcAvailable) {
 			nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 			if (nfcAdapter.isEnabled()) {
-				
-				// Setting up a pending intent that is invoked when an NFC tag is tapped on the back
+
+				// Setting up a pending intent that is invoked when an NFC tag
+				// is tapped on the back
 				pendingIntent = PendingIntent.getActivity(this, 0, new Intent(
 						this, getClass())
 						.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
@@ -162,14 +159,16 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
 	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.activity_network_active, menu);
-		
+
 		// only display the NFC action if NFC is available
 		if (!this.getPackageManager().hasSystemFeature(
 				PackageManager.FEATURE_NFC)) {
@@ -178,7 +177,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		return true;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
 	 */
 	@Override
@@ -199,8 +200,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 				intent.putExtra("ENCODE_SHOW_CONTENTS", false);
 				startActivity(intent);
 			} catch (ActivityNotFoundException e) {
-				
-				// if the "Barcode Scanner" application is not installed ask the user if he wants to install it
+
+				// if the "Barcode Scanner" application is not installed ask the
+				// user if he wants to install it
 				AlertDialog alertDialog = new AlertDialog.Builder(this)
 						.create();
 				alertDialog.setTitle("InstaCircle - Barcode Scanner Required");
@@ -285,8 +287,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		case R.id.write_nfc_tag:
 
 			if (!nfcAdapter.isEnabled()) {
-				
-				// if nfc is available but deactivated ask the user whether he wants to enable it. If yes, redirect to the settings.
+
+				// if nfc is available but deactivated ask the user whether he
+				// wants to enable it. If yes, redirect to the settings.
 				AlertDialog alertDialog = new AlertDialog.Builder(this)
 						.create();
 				alertDialog.setTitle("InstaCircle - NFC needs to be enabled");
@@ -310,7 +313,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 						});
 				alertDialog.show();
 			} else {
-				// display a progress dialog waiting for the NFC tag to be tapped
+				// display a progress dialog waiting for the NFC tag to be
+				// tapped
 				writeNfcEnabled = true;
 				writeNfcTagDialog = new ProgressDialog(this);
 				writeNfcTagDialog
@@ -334,15 +338,23 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see android.app.ActionBar.TabListener#onTabUnselected(android.app.ActionBar.Tab, android.app.FragmentTransaction)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.app.ActionBar.TabListener#onTabUnselected(android.app.ActionBar
+	 * .Tab, android.app.FragmentTransaction)
 	 */
 	public void onTabUnselected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 	}
 
-	/* (non-Javadoc)
-	 * @see android.app.ActionBar.TabListener#onTabSelected(android.app.ActionBar.Tab, android.app.FragmentTransaction)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.app.ActionBar.TabListener#onTabSelected(android.app.ActionBar
+	 * .Tab, android.app.FragmentTransaction)
 	 */
 	public void onTabSelected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
@@ -351,14 +363,17 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		mViewPager.setCurrentItem(tab.getPosition());
 	}
 
-	/* (non-Javadoc)
-	 * @see android.app.ActionBar.TabListener#onTabReselected(android.app.ActionBar.Tab, android.app.FragmentTransaction)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.app.ActionBar.TabListener#onTabReselected(android.app.ActionBar
+	 * .Tab, android.app.FragmentTransaction)
 	 */
 	public void onTabReselected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 	}
 
-	
 	/**
 	 * FragmentPagerAdapter which handles the tabs
 	 * 
@@ -389,7 +404,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 
 		@Override
 		public CharSequence getPageTitle(int position) {
-			
+
 			// set the labels
 			switch (position) {
 			case 0:
@@ -403,8 +418,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
-
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Activity#onNewIntent(android.content.Intent)
 	 */
 	@Override
@@ -440,7 +456,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.support.v4.app.FragmentActivity#onPause()
 	 */
 	@Override
@@ -451,7 +469,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.support.v4.app.FragmentActivity#onDestroy()
 	 */
 	@Override
@@ -460,7 +480,9 @@ public class NetworkActiveActivity extends FragmentActivity implements
 		unregisterReceiver(wifiReceiver);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.support.v4.app.FragmentActivity#onResume()
 	 */
 	@Override
@@ -472,7 +494,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			nfcAvailable = true;
 		}
 
-		// make sure that this activity is the first one which can handle the NFC tags
+		// make sure that this activity is the first one which can handle the
+		// NFC tags
 		if (nfcAvailable) {
 			nfcAdapter.enableForegroundDispatch(this, pendingIntent,
 					intentFiltersArray, null);
@@ -485,11 +508,10 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	 * Writes an NFC Tag
 	 * 
 	 * @param tag
-	 * 		The reference to the tag
+	 *            The reference to the tag
 	 * @param message
-	 * 		the message which should be writen on the message
-	 * @return
-	 * 		true if successful, false otherwise
+	 *            the message which should be writen on the message
+	 * @return true if successful, false otherwise
 	 */
 	public boolean writeTag(Tag tag, NdefMessage message) {
 
@@ -560,7 +582,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	}
 
 	/**
-	 * Broadcast receiver which gets invoked when the network configuration changes
+	 * Broadcast receiver which gets invoked when the network configuration
+	 * changes
 	 */
 	private BroadcastReceiver wifiReceiver = new BroadcastReceiver() {
 
@@ -571,7 +594,8 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	};
 
 	/**
-	 * Checks whether the current network configuration is how it is supposed to be
+	 * Checks whether the current network configuration is how it is supposed to
+	 * be
 	 */
 	public void checkNetworkState() {
 		ConnectivityManager conn = (ConnectivityManager) this
@@ -589,10 +613,12 @@ public class NetworkActiveActivity extends FragmentActivity implements
 			if (!(nInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED
 					&& nInfo.getState() == NetworkInfo.State.CONNECTED && ssid
 						.equals(configuredSsid))) {
-				if (repairInitiated == false && repairTime + 6000 < System.currentTimeMillis()) {
+				if (repairInitiated == false
+						&& repairTime + 6000 < System.currentTimeMillis()) {
 					repairInitiated = true;
 					repairTime = System.currentTimeMillis();
-					// create a dialog that ask whether you want to repair the network connection
+					// create a dialog that ask whether you want to repair the
+					// network connection
 					AlertDialog alertDialog = new AlertDialog.Builder(this)
 							.create();
 					alertDialog
@@ -649,7 +675,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	 * Creates a custom MIME type encapsulated in an NDEF record
 	 * 
 	 * @param mimeType
-	 * 		The string with the mime type name
+	 *            The string with the mime type name
 	 */
 	public NdefRecord createMimeRecord(String mimeType, byte[] payload) {
 		byte[] mimeBytes = mimeType.getBytes(Charset.forName("US-ASCII"));
@@ -661,8 +687,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 	/**
 	 * checks whether the NetworkService is running or not
 	 * 
-	 * @return
-	 * 		true if service is running, false otherwise
+	 * @return true if service is running, false otherwise
 	 */
 	public boolean isServiceRunning() {
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);

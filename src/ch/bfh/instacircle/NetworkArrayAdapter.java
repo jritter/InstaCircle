@@ -36,11 +36,11 @@ public class NetworkArrayAdapter extends ArrayAdapter<HashMap<String, Object>> {
 
 	/**
 	 * @param context
-	 * 		The context from which it has been created
+	 *            The context from which it has been created
 	 * @param textViewResourceId
-	 * 		The id of the item layout
+	 *            The id of the item layout
 	 * @param items
-	 * 		The ArrayList with the values
+	 *            The ArrayList with the values
 	 */
 	public NetworkArrayAdapter(Context context, int textViewResourceId,
 			ArrayList<HashMap<String, Object>> items) {
@@ -49,8 +49,11 @@ public class NetworkArrayAdapter extends ArrayAdapter<HashMap<String, Object>> {
 		this.items = items;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.widget.ArrayAdapter#getView(int, android.view.View, android.view.ViewGroup)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.widget.ArrayAdapter#getView(int, android.view.View,
+	 * android.view.ViewGroup)
 	 */
 	public View getView(int position, View convertView, ViewGroup parent) {
 		View view = convertView;
@@ -70,7 +73,8 @@ public class NetworkArrayAdapter extends ArrayAdapter<HashMap<String, Object>> {
 			ImageView icon = (ImageView) view.findViewById(R.id.icon);
 
 			if (this.getCount() - 1 == position) {
-				// the last item is for the "Create Network" item, so the icon needs to be the router
+				// the last item is for the "Create Network" item, so the icon
+				// needs to be the router
 				icon.setImageResource(R.drawable.glyphicons_046_router);
 				icon.setBackgroundColor(context.getResources().getColor(
 						android.R.color.holo_purple));

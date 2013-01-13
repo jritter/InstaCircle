@@ -24,7 +24,8 @@ import android.widget.EditText;
 import ch.bfh.instacircle.db.NetworkDbHelper;
 
 /**
- * This class implements the fragment which displays the input box and send button for composing new messages
+ * This class implements the fragment which displays the input box and send
+ * button for composing new messages
  * 
  * @author Juerg Ritter (rittj1@bfh.ch)
  */
@@ -39,8 +40,9 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 	private Button btnSend;
 	private EditText et;
 
-
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.support.v4.app.Fragment#onCreate(android.os.Bundle)
 	 */
 	@Override
@@ -48,17 +50,21 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 		super.onCreate(savedInstanceState);
 	}
 
-	/* (non-Javadoc)
-	 * @see android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater,
+	 * android.view.ViewGroup, android.os.Bundle)
 	 */
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		
+
 		// apply the layout
 		View rootView = inflater.inflate(R.layout.fragment_message_send,
 				container, false);
-		
+
 		// extract the button and the textfield
 		btnSend = (Button) rootView.findViewById(R.id.send_button);
 		et = (EditText) getActivity().findViewById(R.id.message_text);
@@ -74,7 +80,9 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 		return rootView;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.view.View.OnClickListener#onClick(android.view.View)
 	 */
 	public void onClick(View view) {
@@ -83,7 +91,7 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 			et = (EditText) getActivity().findViewById(R.id.message_text);
 			String identification = getActivity().getSharedPreferences(
 					PREFS_NAME, 0).getString("identification", "N/A");
-			
+
 			// create new message instance
 			Message message = new Message(et.getText().toString(),
 					Message.MSG_CONTENT, identification,
@@ -93,14 +101,14 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 			if (broadcast == false && ipAddress == null) {
 				Log.w(TAG, "IP Address not set, cannot send unicast message");
 			} else if (broadcast == false) {
-				
+
 				// pass message to service using the local broacast manager
 				intent.putExtra("ipAddress", ipAddress);
 				intent.putExtra("broadcast", false);
 				LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
 						intent);
 			} else {
-				
+
 				// pass message to service using the local broacast manager
 				intent.putExtra("broadcast", true);
 				LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(

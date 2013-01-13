@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle;
 
 import android.app.Activity;
@@ -15,11 +25,15 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
+/**
+ * Fragment which is included in the the Dialog which is shown after clicking on
+ * a network in the main screen.
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ * 
+ */
 public class ConnectNetworkDialogFragment extends DialogFragment implements
 		OnClickListener, TextWatcher {
-
-	private static final String TAG = ConnectNetworkDialogFragment.class
-			.getSimpleName();
 
 	/*
 	 * The activity that creates an instance of this dialog fragment must
@@ -32,7 +46,6 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 		public void onDialogNegativeClick(DialogFragment dialog);
 	}
 
-	// Use this instance of the interface to deliver action events
 	NoticeDialogListener mListener;
 
 	private EditText txtPassword;
@@ -45,19 +58,31 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 
 	private AlertDialog dialog;
 
+	/**
+	 * @param showNetworkKeyField
+	 *            this boolean defines whether the network key field should be
+	 *            displayed or not
+	 */
 	public ConnectNetworkDialogFragment(boolean showNetworkKeyField) {
 		this.showNetworkKeyField = showNetworkKeyField;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.DialogFragment#onCreateDialog(android.os.Bundle)
+	 */
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-		// Get the layout inflater
+
 		LayoutInflater inflater = getActivity().getLayoutInflater();
 
+		// applying the layout
 		View view = inflater.inflate(R.layout.dialog_join_network, null);
 
+		// extract the controls of the layout
 		txtPassword = (EditText) view.findViewById(R.id.password);
 		txtPassword.addTextChangedListener(this);
 
@@ -96,6 +121,8 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 
 		dialog = builder.create();
 
+		// always disable the Join button since the key is always empty and
+		// therefore we are not ready to connect yet
 		dialog.setOnShowListener(new OnShowListener() {
 
 			public void onShow(DialogInterface dialog) {
@@ -107,6 +134,11 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 		return dialog;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.DialogFragment#onAttach(android.app.Activity)
+	 */
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
@@ -122,14 +154,29 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 		}
 	}
 
+	/**
+	 * Returns the password which is defined in the textfield
+	 * 
+	 * @return the password
+	 */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * Returns the network key which is defined in the textfield
+	 * 
+	 * @return the network key
+	 */
 	public String getNetworkKey() {
 		return networkKey;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#afterTextChanged(android.text.Editable)
+	 */
 	public void afterTextChanged(Editable s) {
 
 		Button joinButton = ((AlertDialog) this.getDialog())
@@ -156,14 +203,32 @@ public class ConnectNetworkDialogFragment extends DialogFragment implements
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#beforeTextChanged(java.lang.CharSequence,
+	 * int, int, int)
+	 */
 	public void beforeTextChanged(CharSequence s, int start, int count,
 			int after) {
+
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#onTextChanged(java.lang.CharSequence, int,
+	 * int, int)
+	 */
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.view.View.OnClickListener#onClick(android.view.View)
+	 */
 	public void onClick(View view) {
 
 	}

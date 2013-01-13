@@ -43,7 +43,9 @@ public class MessageListFragment extends ListFragment {
 		public void onItemSelected(String id);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.support.v4.app.Fragment#onCreate(android.os.Bundle)
 	 */
 	@Override
@@ -53,7 +55,7 @@ public class MessageListFragment extends ListFragment {
 		// Subscribing to the messageArrived events to update immediately
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(
 				mMessageReceiver, new IntentFilter("messageArrived"));
-		
+
 		// getting access to the database and query it
 		helper = new NetworkDbHelper(getActivity());
 		cursor = helper.queryMessages();
@@ -64,8 +66,11 @@ public class MessageListFragment extends ListFragment {
 
 	}
 
-	/* (non-Javadoc)
-	 * @see android.support.v4.app.ListFragment#onViewCreated(android.view.View, android.os.Bundle)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.ListFragment#onViewCreated(android.view.View,
+	 * android.os.Bundle)
 	 */
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
@@ -79,8 +84,11 @@ public class MessageListFragment extends ListFragment {
 		this.getListView().setTranscriptMode(2);
 	}
 
-	/* (non-Javadoc)
-	 * @see android.support.v4.app.Fragment#onSaveInstanceState(android.os.Bundle)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.support.v4.app.Fragment#onSaveInstanceState(android.os.Bundle)
 	 */
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
@@ -112,7 +120,9 @@ public class MessageListFragment extends ListFragment {
 		mActivatedPosition = position;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.support.v4.app.Fragment#onDestroy()
 	 */
 	@Override

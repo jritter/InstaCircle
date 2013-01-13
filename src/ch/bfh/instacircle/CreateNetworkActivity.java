@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle;
 
 import java.util.UUID;
@@ -22,11 +32,14 @@ import android.widget.EditText;
 import ch.bfh.instacircle.service.NetworkService;
 import ch.bfh.instacircle.wifi.WifiAPManager;
 
+/**
+ * Activity which provides functionality to set up a new Wifi access point
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ * 
+ */
 public class CreateNetworkActivity extends Activity implements OnClickListener,
 		TextWatcher {
-
-	private static final String TAG = CreateNetworkActivity.class
-			.getSimpleName();
 
 	private WifiAPManager wifiapman;
 	private WifiManager wifiman;
@@ -35,12 +48,20 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 	private EditText txtNetworkName;
 	private EditText txtNetworkPIN;
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreate(android.os.Bundle)
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		// apply the layout
 		setContentView(R.layout.activity_create_network);
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 
+		// extract the control elements from the layout
 		txtNetworkName = (EditText) findViewById(R.id.network_name);
 		txtNetworkPIN = (EditText) findViewById(R.id.network_pin);
 
@@ -55,10 +76,12 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 		txtNetworkPIN.addTextChangedListener(this);
 		txtNetworkPIN.setText(config.preSharedKey);
 
+		// make a suggestion of a password
 		if (config.preSharedKey == null || config.preSharedKey.length() < 8) {
 			txtNetworkPIN.setText(UUID.randomUUID().toString().substring(0, 8));
 		}
 
+		// asking if we should use the already running access point
 		if (wifiapman.isWifiAPEnabled(wifiman)) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle("InstaCircle - WiFi AP");
@@ -87,6 +110,7 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 			dialog.show();
 		}
 
+		// enable the create button only if the key has a sufficient length
 		if (txtNetworkPIN.getText().toString().length() < 8) {
 			btnCreateNetwork.setEnabled(false);
 		} else {
@@ -94,12 +118,22 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.activity_create_network, menu);
 		return true;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -110,10 +144,14 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 		return super.onOptionsItemSelected(item);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.view.View.OnClickListener#onClick(android.view.View)
+	 */
 	public void onClick(View view) {
-
 		if (view == btnCreateNetwork) {
-
+			// setting up the the configuration
 			if (wifiapman.isWifiAPEnabled(wifiman)) {
 				wifiapman.disableHotspot(wifiman, this);
 			}
@@ -123,8 +161,7 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 			wificonfig.preSharedKey = txtNetworkPIN.getText().toString();
 			wificonfig.hiddenSSID = false;
 			wificonfig.status = WifiConfiguration.Status.ENABLED;
-			// wificonfig.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
-			// wificonfig.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.SHARED);
+
 			wificonfig.allowedGroupCiphers
 					.set(WifiConfiguration.GroupCipher.TKIP);
 			wificonfig.allowedGroupCiphers
@@ -137,15 +174,30 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 					.set(WifiConfiguration.PairwiseCipher.CCMP);
 			wificonfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
 
+			// enabling the configuration
 			wifiapman.enableHotspot(wifiman, wificonfig, this);
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#onTextChanged(java.lang.CharSequence, int,
+	 * int, int)
+	 */
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#afterTextChanged(android.text.Editable)
+	 */
 	public void afterTextChanged(Editable s) {
+		// always check after editing the password field whether it has a
+		// sufficient length and set the status of the create network button
+		// accordingly
 		if (txtNetworkPIN.getText().toString().length() < 8) {
 			btnCreateNetwork.setEnabled(false);
 		} else {
@@ -153,6 +205,12 @@ public class CreateNetworkActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#beforeTextChanged(java.lang.CharSequence,
+	 * int, int, int)
+	 */
 	public void beforeTextChanged(CharSequence s, int start, int count,
 			int after) {
 

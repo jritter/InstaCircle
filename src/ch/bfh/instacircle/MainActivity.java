@@ -1,3 +1,13 @@
+/*
+ *  UniCrypt Cryptographic Library
+ *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
+ *  All rights reserved.
+ *
+ *  Distributable under GPL license.
+ *  See terms of license at gnu.org.
+ *  
+ */
+
 package ch.bfh.instacircle;
 
 import java.util.ArrayList;
@@ -36,18 +46,21 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
 
-public class MainActivity extends Activity implements OnClickListener,
-		OnItemClickListener, ConnectNetworkDialogFragment.NoticeDialogListener,
-		TextWatcher {
+/**
+ * Activity which is displayed when launching the application
+ * 
+ * @author Juerg Ritter (rittj1@bfh.ch)
+ * 
+ */
+public class MainActivity extends Activity implements OnItemClickListener,
+		ConnectNetworkDialogFragment.NoticeDialogListener, TextWatcher {
 
 	private static final String TAG = MainActivity.class.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
@@ -57,7 +70,6 @@ public class MainActivity extends Activity implements OnClickListener,
 
 	private ArrayList<HashMap<String, Object>> arraylist = new ArrayList<HashMap<String, Object>>();
 	private HashMap<String, Object> lastItem = new HashMap<String, Object>();
-	private Button btnCreateNetwork;
 
 	private ListView lv;
 
@@ -80,29 +92,42 @@ public class MainActivity extends Activity implements OnClickListener,
 	private Parcelable[] rawMsgs;
 	private int selectedNetId;
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#afterTextChanged(android.text.Editable)
+	 */
 	public void afterTextChanged(Editable s) {
+
+		// saving the identification field immediately after changing it
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString("identification", txtIdentification.getText()
 				.toString());
 		editor.commit();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#beforeTextChanged(java.lang.CharSequence,
+	 * int, int, int)
+	 */
 	public void beforeTextChanged(CharSequence s, int start, int count,
 			int after) {
 
 	}
 
-	public void onClick(View v) {
-		if (v == btnCreateNetwork) {
-			Intent intent = new Intent(this, CreateNetworkActivity.class);
-			startActivity(intent);
-		}
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreate(android.os.Bundle)
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		// redirect immediately to the NetworkActiveActivity if the
+		// NetworkService is already running
 		if (isServiceRunning()) {
 			Log.d(TAG, "going straight to the network Active Activity...");
 			Intent intent = new Intent(this, NetworkActiveActivity.class);
@@ -113,23 +138,23 @@ public class MainActivity extends Activity implements OnClickListener,
 			startActivity(intent);
 		}
 
+		// applying the layout
 		setContentView(R.layout.activity_main);
 
+		// reading the identification from the preferences, if it is not there
+		// it will try to read the name of the device owner
 		preferences = getSharedPreferences(PREFS_NAME, 0);
 		String identification = preferences.getString("identification",
 				readOwnerName());
 
 		lv = (ListView) findViewById(R.id.network_listview);
-		// btnCreateNetwork = (Button) findViewById(R.id.create_network_button);
-		// btnCreateNetwork.setOnClickListener(this);
 
 		txtIdentification = (EditText) findViewById(R.id.identification_edittext);
 		txtIdentification.setText(identification);
 
 		txtIdentification.addTextChangedListener(this);
 
-		// Handling the WiFi...
-
+		// Handling the WiFi
 		wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		adhoc = new AdhocWifiManager(wifi);
 
@@ -141,6 +166,7 @@ public class MainActivity extends Activity implements OnClickListener,
 		lv.setAdapter(adapter);
 		lv.setOnItemClickListener(this);
 
+		// defining what happens as soon as scan results arrive
 		wifibroadcastreceiver = new BroadcastReceiver() {
 
 			@Override
@@ -184,11 +210,12 @@ public class MainActivity extends Activity implements OnClickListener,
 			}
 		};
 
+		// register the receiver, subscribing for the SCAN_RESULTS_AVAILABLE
+		// action
 		registerReceiver(wifibroadcastreceiver, new IntentFilter(
 				WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
 
-		// NFC stuff
-
+		// Handling the NFC part, but only if the device provides this feature
 		nfcAvailable = this.getPackageManager().hasSystemFeature(
 				PackageManager.FEATURE_NFC);
 
@@ -198,11 +225,13 @@ public class MainActivity extends Activity implements OnClickListener,
 			rawMsgs = null;
 			rawMsgs = getIntent().getParcelableArrayExtra(
 					NfcAdapter.EXTRA_NDEF_MESSAGES);
-			Log.d(TAG, "NFC is available");
+
 			if (rawMsgs != null && !isServiceRunning()) {
 				processNfcTag();
 			}
 
+			// setting up a pending intent which is invoked when a tag is tapped
+			// on the back of the device
 			if (nfcAdapter.isEnabled()) {
 
 				Intent intent = new Intent(this, getClass());
@@ -226,6 +255,11 @@ public class MainActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -233,20 +267,28 @@ public class MainActivity extends Activity implements OnClickListener,
 		return true;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onOptionsItemSelected(android.view.MenuItem)
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
 		switch (item.getItemId()) {
 		case R.id.capture_qrcode:
-
+			// launching the QR code capturing
 			wifi.startScan();
 			try {
+				// trying to launch the "Barcode Scanner" application
 				Intent intent = new Intent(
 						"com.google.zxing.client.android.SCAN");
 				intent.setPackage("com.google.zxing.client.android");
 				intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
 				startActivityForResult(intent, 0);
 			} catch (ActivityNotFoundException e) {
+				// if the "Barcode Scanner" application is not installed, asking
+				// the user if he wants to install it
 				AlertDialog alertDialog = new AlertDialog.Builder(this)
 						.create();
 				alertDialog.setTitle("InstaCircle - Barcode Scanner Required");
@@ -279,6 +321,7 @@ public class MainActivity extends Activity implements OnClickListener,
 			return true;
 
 		case R.id.rescan_wifi:
+			// rescanning the WLAN networks
 			wifi.startScan();
 			Toast.makeText(this, "Rescan initiated", Toast.LENGTH_SHORT).show();
 
@@ -287,33 +330,60 @@ public class MainActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onActivityResult(int, int,
+	 * android.content.Intent)
+	 */
 	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
+		// this will be executed when the "Barcode Scanner" application delivers
+		// back a result from its scan.
 		if (resultCode == RESULT_OK) {
 			String[] config = intent.getStringExtra("SCAN_RESULT").split(
 					"\\|\\|");
-			Log.d(TAG, "Extracted SSID from QR Code: " + config[0]);
-			Log.d(TAG, "Extracted Password from QR Code: " + config[1]);
 
+			// saving the values that we got
 			SharedPreferences.Editor editor = preferences.edit();
 			editor.putString("SSID", config[0]);
 			editor.putString("password", config[1]);
 			editor.commit();
 
+			// connect to the network
 			connect(config);
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onDestroy()
+	 */
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		unregisterReceiver(wifibroadcastreceiver);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.bfh.instacircle.ConnectNetworkDialogFragment.NoticeDialogListener#
+	 * onDialogNegativeClick(android.app.DialogFragment)
+	 */
 	public void onDialogNegativeClick(DialogFragment dialog) {
 		dialog.dismiss();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.bfh.instacircle.ConnectNetworkDialogFragment.NoticeDialogListener#
+	 * onDialogPositiveClick(android.app.DialogFragment)
+	 */
 	public void onDialogPositiveClick(DialogFragment dialog) {
 
 		if (selectedNetId != -1) {
@@ -324,8 +394,6 @@ public class MainActivity extends Activity implements OnClickListener,
 					this);
 		}
 
-		Log.d(TAG, "now saving the password "
-				+ ((ConnectNetworkDialogFragment) dialog).getPassword());
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString("SSID", selectedResult.SSID);
 		editor.putString("password",
@@ -335,20 +403,31 @@ public class MainActivity extends Activity implements OnClickListener,
 		dialog.dismiss();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.widget.AdapterView.OnItemClickListener#onItemClick(android.widget
+	 * .AdapterView, android.view.View, int, long)
+	 */
 	public void onItemClick(AdapterView<?> listview, View view, int position,
 			long id) {
 
 		if (listview.getAdapter().getCount() - 1 == position) {
+			// handling the last item in the list, which is the "Create network"
+			// item
 			Intent intent = new Intent(this, CreateNetworkActivity.class);
 			startActivity(intent);
 		} else {
-
+			// extract the Hashmap assigned to the position which has been
+			// clicked
 			HashMap<String, Object> hash = (HashMap<String, Object>) listview
 					.getAdapter().getItem(position);
 
 			selectedResult = (ScanResult) hash.get("object");
 			selectedNetId = -1;
 
+			// going through the different connection scenarios
 			DialogFragment dialogFragment;
 			if ((Boolean) hash.get("secure") && !((Boolean) hash.get("known"))) {
 				dialogFragment = new ConnectNetworkDialogFragment(true);
@@ -361,23 +440,35 @@ public class MainActivity extends Activity implements OnClickListener,
 
 			dialogFragment.show(getFragmentManager(), TAG);
 
-			// AlertDialog dialog = (AlertDialog) dialogFragment.getDialog();
-			// dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-
-			// ((AlertDialog)dialogFragment.getDialog()).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onStart()
+	 */
 	@Override
 	protected void onStart() {
 		super.onStart();
-		scan();
+		wifi.startScan();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.text.TextWatcher#onTextChanged(java.lang.CharSequence, int,
+	 * int, int)
+	 */
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 
 	}
 
+	/**
+	 * This method is used to extract the name of the device owner
+	 * 
+	 * @return the name of the device owner
+	 */
 	public String readOwnerName() {
 
 		Cursor c = getContentResolver().query(
@@ -393,10 +484,11 @@ public class MainActivity extends Activity implements OnClickListener,
 
 	}
 
-	public void scan() {
-		wifi.startScan();
-	}
-
+	/**
+	 * Checks whether the NetworkService is already running or not
+	 * 
+	 * @return true if service is running, false otherwise
+	 */
 	public boolean isServiceRunning() {
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 		for (RunningServiceInfo service : manager
@@ -409,14 +501,26 @@ public class MainActivity extends Activity implements OnClickListener,
 		return false;
 	}
 
-	// Handle the NFC part...
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onNewIntent(android.content.Intent)
+	 */
 	@Override
 	public void onNewIntent(Intent intent) {
+
+		// this method is launched when a NFC tag is tapped on the back of the
+		// device
 		rawMsgs = intent
 				.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
 		processNfcTag();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onPause()
+	 */
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -425,13 +529,18 @@ public class MainActivity extends Activity implements OnClickListener,
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onResume()
+	 */
 	@Override
 	protected void onResume() {
 		super.onResume();
 
+		// make sure that we have priority for processing the NFC tag
 		if (nfcAdapter != null && nfcAdapter.isEnabled()) {
 			nfcAvailable = true;
-
 		}
 
 		if (nfcAvailable) {
@@ -441,13 +550,15 @@ public class MainActivity extends Activity implements OnClickListener,
 
 	}
 
+	/**
+	 * This method is used for parsing a tag which is tapped on the back of the
+	 * device
+	 */
 	private void processNfcTag() {
 		NdefMessage msg = (NdefMessage) rawMsgs[0];
 
 		String[] config = new String(msg.getRecords()[0].getPayload())
 				.split("\\|\\|");
-		Log.d(TAG, "Extracted SSID from NFC Tag: " + config[0]);
-		Log.d(TAG, "Extracted Password from NFC Tag: " + config[1]);
 
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString("SSID", config[0]);
@@ -457,6 +568,12 @@ public class MainActivity extends Activity implements OnClickListener,
 		connect(config);
 	}
 
+	/**
+	 * This method initiates the connect process
+	 * 
+	 * @param config
+	 *            an array containing the SSID and the password of the network
+	 */
 	private void connect(String[] config) {
 		boolean connectedSuccessful = false;
 		// check whether the network is already known, i.e. the password is
@@ -464,7 +581,6 @@ public class MainActivity extends Activity implements OnClickListener,
 		for (WifiConfiguration configuredNetwork : wifi.getConfiguredNetworks()) {
 			if (configuredNetwork.SSID.equals("\"".concat(config[0]).concat(
 					"\""))) {
-				Log.d(TAG, "Found known network, connecting...");
 				connectedSuccessful = true;
 				adhoc.connectToNetwork(configuredNetwork.networkId, this);
 				break;
@@ -474,15 +590,14 @@ public class MainActivity extends Activity implements OnClickListener,
 			for (ScanResult result : wifi.getScanResults()) {
 				if (result.SSID.equals(config[0])) {
 					connectedSuccessful = true;
-					Log.d(TAG, "Found unknown network, connecting...");
 					adhoc.connectToNetwork(config[0], config[1], this);
 					break;
 				}
 			}
 		}
 
+		// display a message if the connection was not successful
 		if (!connectedSuccessful) {
-			Log.d(TAG, "network not found");
 			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 			alertDialog.setTitle("InstaCircle - Network not found");
 			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK",
@@ -495,9 +610,5 @@ public class MainActivity extends Activity implements OnClickListener,
 					+ "\" is not available, cannot connect.");
 			alertDialog.show();
 		}
-	}
-
-	public void addCreateNetworkItem() {
-
 	}
 }

@@ -54,28 +54,39 @@ public class NetworkInfoFragment extends Fragment implements
 
 	}
 
-	/* (non-Javadoc)
-	 * @see android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * android.support.v4.app.Fragment#onCreateView(android.view.LayoutInflater,
+	 * android.view.ViewGroup, android.os.Bundle)
 	 */
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		
+
 		// applying the view
 		View rootView = inflater.inflate(R.layout.fragment_network_info,
 				container, false);
 		return rootView;
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.bfh.instacircle.ParticipantsListFragment.Callbacks#onItemSelected(java.lang.String)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.bfh.instacircle.ParticipantsListFragment.Callbacks#onItemSelected(
+	 * java.lang.String)
 	 */
 	public void onItemSelected(String id) {
 
 	}
 
-	/* (non-Javadoc)
-	 * @see android.support.v4.app.Fragment#onViewCreated(android.view.View, android.os.Bundle)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.Fragment#onViewCreated(android.view.View,
+	 * android.os.Bundle)
 	 */
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState) {
