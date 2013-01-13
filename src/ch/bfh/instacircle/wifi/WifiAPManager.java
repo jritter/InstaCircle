@@ -77,8 +77,6 @@ public class WifiAPManager {
 	 *            the android wifi manager which should be used
 	 * @param context
 	 *            the android context from which this functionality is used
-	 * 
-	 * @author http://stackoverflow.com/a/7049074/1233435
 	 */
 	public void toggleWiFiAP(WifiManager wifi, Context context) {
 		if (this.wifi == null) {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="javadoc">
+    <target name="javadoc">
+        <javadoc access="public" author="true" destdir="doc" doctitle="InstaCircle - A Location-Bound Ad-hoc Network for Android Devices" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="ch.bfh.instacircle.db,ch.bfh.instacircle.wifi,ch.bfh.instacircle.service" source="1.5" sourcefiles="src/ch/bfh/instacircle/MessageCursorAdapter.java,src/ch/bfh/instacircle/ParticipantsListFragment.java,src/ch/bfh/instacircle/MainActivity.java,src/ch/bfh/instacircle/ParticipantDetailActivity.java,src/ch/bfh/instacircle/ConnectNetworkDialogFragment.java,src/ch/bfh/instacircle/Message.java,src/ch/bfh/instacircle/MessageSendFragment.java,src/ch/bfh/instacircle/NetworkActiveActivity.java,src/ch/bfh/instacircle/MessageListFragment.java,src/ch/bfh/instacircle/MessageFragment.java,src/ch/bfh/instacircle/NetworkInfoFragment.java,src/ch/bfh/instacircle/CreateNetworkActivity.java,src/ch/bfh/instacircle/ParticipantDetailFragment.java,src/ch/bfh/instacircle/ParticipantCursorAdapter.java,src/ch/bfh/instacircle/NetworkArrayAdapter.java" sourcepath="src:gen" splitindex="true" use="true" version="true">
+            <link href="http://developer.android.com/reference/"/>
+        </javadoc>
+    </target>
+</project>

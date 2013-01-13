@@ -68,10 +68,6 @@ import ch.bfh.instacircle.wifi.WifiAPManager;
  * 
  * @author Juerg Ritter (rittj1@bfh.ch)
  */
-/**
- * @author tgdriju1
- * 
- */
 public class NetworkService extends Service {
 
 	private static final String TAG = NetworkService.class.getSimpleName();

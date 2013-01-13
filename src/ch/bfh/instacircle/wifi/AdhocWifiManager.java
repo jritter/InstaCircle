@@ -98,10 +98,10 @@ public class AdhocWifiManager {
 	 *            defines whether the NetworkActiveActivity should be started
 	 *            after connecting
 	 */
-	public void connectToNetwork(final String SSID, final String password,
+	public void connectToNetwork(final String ssid, final String password,
 			final Context context, final boolean startActivity) {
 		Log.d(TAG, "connect using SSID...");
-		new ConnectWifiTask(SSID, password, context, startActivity).execute();
+		new ConnectWifiTask(ssid, password, context, startActivity).execute();
 	}
 
 	/**
