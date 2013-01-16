@@ -19,6 +19,7 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
@@ -39,6 +40,7 @@ import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.ContactsContract;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -51,6 +53,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+import ch.bfh.instacircle.db.NetworkDbHelper;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
 
 /**
@@ -324,6 +327,34 @@ public class MainActivity extends Activity implements OnItemClickListener,
 			// rescanning the WLAN networks
 			wifi.startScan();
 			Toast.makeText(this, "Rescan initiated", Toast.LENGTH_SHORT).show();
+			return true;
+			
+		case R.id.cleanup_conversations:
+
+			// Display a confirm dialog asking whether really to clean the database
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("InstaCircle - Clean Database");
+			builder.setMessage("Do you really want to clean all your conversations?");
+			builder.setPositiveButton("Yes",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							NetworkDbHelper helper = new NetworkDbHelper(
+									MainActivity.this);
+							helper.cleanDatabase();
+							Toast.makeText(MainActivity.this,
+									"Database cleaned", Toast.LENGTH_SHORT)
+									.show();
+						}
+					});
+			builder.setNegativeButton("No",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							return;
+						}
+					});
+			AlertDialog dialog = builder.create();
+			dialog.show();
+			return true;
 
 		default:
 			return super.onOptionsItemSelected(item);

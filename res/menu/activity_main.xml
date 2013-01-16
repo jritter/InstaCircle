@@ -12,4 +12,10 @@
         android:icon="@drawable/glyphicons_011_camera"
         android:title="@string/capture_qrcode"
         android:showAsAction="ifRoom" />
+    
+    <item
+        android:id="@+id/cleanup_conversations"
+        android:icon="@drawable/glyphicons_016_bin"
+        android:title="@string/cleanup_conversations"
+        android:showAsAction="ifRoom" />
 </menu>

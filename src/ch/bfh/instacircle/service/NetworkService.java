@@ -286,7 +286,7 @@ public class NetworkService extends Service {
 				new UnicastMessageAsyncTask(msg.getSenderIPAddress())
 						.execute(resendRequestMessage);
 			} else {
-				if (dbHelper != null) {
+				if (dbHelper != null && (!dbHelper.isMessageInDatabase(msg))) {
 					// insert the message into the database
 					dbHelper.insertMessage(msg);
 				}

@@ -566,4 +566,39 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		c.close();
 		return participantKnown;
 	}
+	
+	/**
+	 * Checks whether a message is already in the database
+	 * 
+	 * @param msg
+	 *            the message which needs to be checked
+	 * @return true if already saved, false otherwise
+	 */
+	public boolean isMessageInDatabase(Message msg) {
+		boolean messageInDatabase = false;
+		SQLiteDatabase db = getReadableDatabase();
+		String query = "SELECT * FROM " + TABLE_NAME_MESSAGE + " m, "
+				+ TABLE_NAME_PARTICIPANT + " p WHERE p."
+				+ PARTICIPANT_IDENTIFICATION + " = '" + msg.getSender()
+				+ "' AND m." + MESSAGES_SEQUENCE_NUMBER + " = "
+				+ msg.getSequenceNumber() + " AND m." + MESSAGE_SENDER_ID
+				+ " = p." + PARTICIPANT_ID + " AND p." + PARTICIPANT_CONVERSATION_ID + " = "  + getOpenConversationId() + ";";
+		Cursor c = db.rawQuery(query, null);
+		if (c.getCount() > 0) {
+			messageInDatabase = true;
+		}
+		c.close();
+		return messageInDatabase;
+	}
+
+	/**
+	 * Housekeeping function, cleans all conversations out of the database
+	 */
+	public void cleanDatabase() {
+		SQLiteDatabase db = getWritableDatabase();
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_CONVERSATION);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_PARTICIPANT);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_MESSAGE);
+		onCreate(db);
+	}
 }
