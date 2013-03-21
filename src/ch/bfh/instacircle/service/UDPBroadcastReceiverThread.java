@@ -27,6 +27,10 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import android.content.Context;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.MulticastLock;
+
 import ch.bfh.instacircle.Message;
 
 /**
@@ -65,6 +69,12 @@ public class UDPBroadcastReceiverThread extends Thread {
 	 * @see java.lang.Thread#run()
 	 */
 	public void run() {
+		
+		WifiManager wifi;
+		wifi = (WifiManager) service.getSystemService(Context.WIFI_SERVICE);
+		MulticastLock ml = wifi.createMulticastLock("just some tag text");
+		ml.acquire();
+		
 		Message msg;
 		try {
 			socket = new DatagramSocket(12345);
@@ -124,12 +134,15 @@ public class UDPBroadcastReceiverThread extends Thread {
 				} catch (IOException e) {
 					socket.close();
 					Thread.currentThread().interrupt();
+					ml.release();
 				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
+		} finally {
+			ml.release();
 		}
 	}
 
