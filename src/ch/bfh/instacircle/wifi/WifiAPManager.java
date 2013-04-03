@@ -143,31 +143,34 @@ public class WifiAPManager {
 	public void disableHotspot(WifiManager wifi, Context context) {
 
 		if (this.wifi == null) {
-			this.wifi = wifi;
-		}
+            this.wifi = wifi;
+        }
 
-		// restoring the original configuration
-		preferences = context.getSharedPreferences(PREFS_NAME, 0);
-		String serializedAPConfig = preferences.getString("originalApConfig",
-				"");
+        String strModel = android.os.Build.MODEL;
 
-		try {
-			ObjectInputStream ois = new ObjectInputStream(
-					new ByteArrayInputStream(Base64.decode(serializedAPConfig,
-							Base64.DEFAULT)));
-			SerializableWifiConfiguration oldConfiguration = (SerializableWifiConfiguration) ois
-					.readObject();
-			setWifiApConfiguration(wifi,
-					oldConfiguration.getWifiConfiguration());
-		} catch (StreamCorruptedException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+        if (!strModel.contains("HTC One V")) {
+            // restoring the original configuration
+            preferences = context.getSharedPreferences(PREFS_NAME, 0);
+            String serializedAPConfig = preferences.getString(
+                    "originalApConfig", "");
 
-		new SetWifiAPTask(false, context).execute();
+            try {
+                ObjectInputStream ois = new ObjectInputStream(
+                        new ByteArrayInputStream(Base64.decode(
+                                serializedAPConfig, Base64.DEFAULT)));
+                SerializableWifiConfiguration oldConfiguration = (SerializableWifiConfiguration) ois
+                        .readObject();
+                setWifiApConfiguration(wifi,
+                        oldConfiguration.getWifiConfiguration());
+            } catch (StreamCorruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            new SetWifiAPTask(false, context).execute();
+        }
 	}
 
 	/**
