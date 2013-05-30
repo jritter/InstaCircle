@@ -148,6 +148,7 @@ public class WifiAPManager {
 
         String strModel = android.os.Build.MODEL;
 
+        //HTC One crashes when deactiving AP
         if (!strModel.contains("HTC One V")) {
             // restoring the original configuration
             preferences = context.getSharedPreferences(PREFS_NAME, 0);

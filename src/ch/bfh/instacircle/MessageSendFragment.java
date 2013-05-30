@@ -69,7 +69,7 @@ public class MessageSendFragment extends Fragment implements OnClickListener {
 		btnSend = (Button) rootView.findViewById(R.id.send_button);
 		et = (EditText) getActivity().findViewById(R.id.message_text);
 		btnSend.setOnClickListener(this);
-		dbHelper = new NetworkDbHelper(getActivity());
+		dbHelper = NetworkDbHelper.getInstance(getActivity());
 
 		// determining if we are dealing with broadcast or unicast messages
 		if (getActivity() instanceof ParticipantDetailActivity) {

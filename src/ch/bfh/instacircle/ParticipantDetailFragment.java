@@ -77,7 +77,7 @@ public class ParticipantDetailFragment extends Fragment implements
 		super.onViewCreated(view, savedInstanceState);
 
 		// getting access to the Database
-		dbHelper = new NetworkDbHelper(getActivity());
+		dbHelper = NetworkDbHelper.getInstance(getActivity());
 
 		participantId = getActivity().getIntent().getIntExtra("participant_id",
 				-1);

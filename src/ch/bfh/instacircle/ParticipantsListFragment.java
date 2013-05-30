@@ -62,7 +62,7 @@ public class ParticipantsListFragment extends ListFragment {
 				mMessageReceiver, intentFilter);
 
 		// getting access to the database and query it
-		helper = new NetworkDbHelper(getActivity());
+		helper = NetworkDbHelper.getInstance(getActivity());
 		cursor = helper.queryParticipants();
 
 		// initializing the adapter and assign it to myself

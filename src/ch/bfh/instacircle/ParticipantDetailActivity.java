@@ -40,7 +40,7 @@ public class ParticipantDetailActivity extends FragmentActivity {
 		super.onCreate(savedInstanceState);
 
 		// getting access to the database and query it
-		dbHelper = new NetworkDbHelper(this);
+		dbHelper = NetworkDbHelper.getInstance(this);
 		participantId = getIntent().getIntExtra("participant_id", -1);
 
 		Cursor participant = dbHelper.queryParticipant(participantId);

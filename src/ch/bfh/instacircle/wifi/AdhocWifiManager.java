@@ -28,6 +28,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.WindowManager.BadTokenException;
 import ch.bfh.instacircle.service.NetworkService;
 
 /**
@@ -414,7 +415,11 @@ public class AdhocWifiManager {
 								}
 							});
 					AlertDialog dialog = builder.create();
-					dialog.show();
+					try{
+						dialog.show();
+					} catch (BadTokenException e){
+						//other activity was already started
+					}
 				}
 			}
 		}

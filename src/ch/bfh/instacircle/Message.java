@@ -61,6 +61,11 @@ public class Message implements Serializable {
 	 * requestor containing the current sequence number
 	 */
 	public static final int MSG_IAMHERE = 7;
+	
+	/**
+	 * Content of message of type MSG_MSGLEAVE if we want the DB to be deleted on leave
+	 */
+	public static final String DELETE_DB = "deleteDB";
 
 	private String message;
 	private String sender;
@@ -186,6 +191,20 @@ public class Message implements Serializable {
 		return "BroadcastMessage [message=" + message + ", sequenceNumber="
 				+ sequenceNumber + ", sender=" + sender + ", messageType="
 				+ messageType + ", senderIPAddress=" + senderIPAddress + "]";
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		//Added by Phil
+		if(o==null)return false;
+		if(!(o instanceof Message)) return false;
+		Message m = (Message)o;
+		if(this.message==null || m.message==null) return false;
+		if(this.sender==null || m.sender==null) return false;
+		if(this.senderIPAddress==null || m.senderIPAddress==null) return false;
+		
+		return this.message.equals(m.message) && this.messageType==m.messageType
+				&& this.sender.equals(m.sender) && this.senderIPAddress.equals(m.senderIPAddress);
 	}
 
 }

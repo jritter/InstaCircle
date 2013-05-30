@@ -97,7 +97,7 @@ public class NetworkInfoFragment extends Fragment implements
 		AdhocWifiManager adhoc = new AdhocWifiManager(wifi);
 
 		super.onViewCreated(view, savedInstanceState);
-		dbHelper = new NetworkDbHelper(getActivity());
+		dbHelper = NetworkDbHelper.getInstance(getActivity());
 		preferences = getActivity().getSharedPreferences(PREFS_NAME, 0);
 
 		// set the labels accordingly

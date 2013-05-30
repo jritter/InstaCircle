@@ -57,7 +57,7 @@ public class MessageListFragment extends ListFragment {
 				mMessageReceiver, new IntentFilter("messageArrived"));
 
 		// getting access to the database and query it
-		helper = new NetworkDbHelper(getActivity());
+		helper = NetworkDbHelper.getInstance(getActivity());
 		cursor = helper.queryMessages();
 
 		// initializing the adapter and assign it to myself

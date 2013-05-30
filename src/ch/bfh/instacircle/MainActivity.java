@@ -338,7 +338,7 @@ public class MainActivity extends Activity implements OnItemClickListener,
 			builder.setPositiveButton("Yes",
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
-							NetworkDbHelper helper = new NetworkDbHelper(
+							NetworkDbHelper helper = NetworkDbHelper.getInstance(
 									MainActivity.this);
 							helper.cleanDatabase();
 							Toast.makeText(MainActivity.this,

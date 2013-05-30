@@ -130,7 +130,7 @@ public class NetworkService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
 		// Initializing the dbHelper in order to get access to the database
-		dbHelper = new NetworkDbHelper(this);
+		dbHelper = NetworkDbHelper.getInstance(this);
 
 		// Create a pending intent which will be invoked after tapping on the
 		// Android notification
@@ -244,6 +244,7 @@ public class NetworkService extends Service {
 			// Notify the UI, but only if it's not myself who left
 			if (!msg.getSender().equals(identification)) {
 				intent = new Intent("participantChangedState");
+				intent.putExtra("participant", msg.getSenderIPAddress());
 				LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 			}
 			break;
@@ -306,10 +307,16 @@ public class NetworkService extends Service {
 			}
 
 			dbHelper.closeConversation();
+			if(msg.getMessage().equals(Message.DELETE_DB) && msg.getSender().equals(identification)){
+				dbHelper.cleanDatabase();
+			}
 			WifiManager wifiman = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 			new AdhocWifiManager(wifiman)
 					.restoreWifiConfiguration(getBaseContext());
-			new WifiAPManager().disableHotspot(wifiman, getBaseContext());
+			WifiAPManager wifiAP = new WifiAPManager();
+			if(wifiAP.isWifiAPEnabled(wifiman)){
+				wifiAP.disableHotspot(wifiman, getBaseContext());
+			}
 			stopSelf();
 			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			notificationManager.cancelAll();

@@ -251,7 +251,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 										"identification", "N/A");
 								Message message = new Message(identification,
 										Message.MSG_MSGLEAVE, identification,
-										new NetworkDbHelper(
+										NetworkDbHelper.getInstance(
 												NetworkActiveActivity.this)
 												.getNextSequenceNumber());
 								Intent intent = new Intent("messageSend");
@@ -260,7 +260,7 @@ public class NetworkActiveActivity extends FragmentActivity implements
 										NetworkActiveActivity.this)
 										.sendBroadcast(intent);
 							} else {
-								new NetworkDbHelper(NetworkActiveActivity.this)
+								NetworkDbHelper.getInstance(NetworkActiveActivity.this)
 										.closeConversation();
 								NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 								notificationManager.cancelAll();

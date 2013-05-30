@@ -29,6 +29,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+import android.util.Log;
+
 import ch.bfh.instacircle.Message;
 
 /**
@@ -108,7 +110,11 @@ public class TCPUnicastReceiverThread extends Thread {
 						if (!Thread.currentThread().isInterrupted()) {
 							msg.setSenderIPAddress((clientSocket
 									.getInetAddress()).getHostAddress());
-							service.processUnicastMessage(msg);
+							try{
+								service.processUnicastMessage(msg);
+							} catch (Exception e){
+								Log.e(TAG, "Problem occured while processing message: "+e.getMessage());
+							}
 						}
 
 					}

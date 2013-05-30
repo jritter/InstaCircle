@@ -63,14 +63,30 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	private static final String CONVERSATION_END = "conversation_end";
 	private static final String CONVERSATION_OPEN = "conversation_open";
 
+	private static NetworkDbHelper mInstance;
+
 	private Context context;
 	private String identification;
+
+	/**
+	 * Create an instance of the class
+	 * @param ctx
+	 * 			The context from which it being invoked
+	 * @return instance of the object
+	 */
+	public static NetworkDbHelper getInstance(Context ctx) {
+
+		if (mInstance == null) {
+			mInstance = new NetworkDbHelper(ctx);
+		}
+		return mInstance;
+	}
 
 	/**
 	 * @param context
 	 *            The context from which it being invoked
 	 */
-	public NetworkDbHelper(Context context) {
+	private NetworkDbHelper(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		this.context = context;
 		identification = context.getSharedPreferences(PREFS_NAME, 0).getString(
@@ -158,7 +174,10 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			values.put(MESSAGES_SEQUENCE_NUMBER, message.getSequenceNumber());
 			values.put(MESSAGES_SOURCE_IP_ADDRESS, message.getSenderIPAddress());
 			values.put(MESSAGES_TIMESTAMP, message.getTimestamp());
-			rowId = db.insert(TABLE_NAME_MESSAGE, null, values);
+			//if participant exist
+			if(getParticipantID(message.getSender())!=-1){
+				rowId = db.insert(TABLE_NAME_MESSAGE, null, values);
+			}
 		} catch (SQLiteException e) {
 
 		} finally {
@@ -183,9 +202,16 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		String sql = "SELECT * FROM participant p WHERE p.identification = '"
 				+ participantIdentification + "' AND p.conversation_id = "
 				+ conversationId;
-		Cursor c = db.rawQuery(sql, null);
-		c.moveToFirst();
-		return c.getLong(c.getColumnIndex("_id"));
+		try{
+			Cursor c = db.rawQuery(sql, null);
+			c.moveToFirst();
+			if(c.getCount()==0){
+				return -1;
+			}
+			return c.getLong(c.getColumnIndex("_id"));
+		} catch (Exception e){
+			return -1;
+		}
 	}
 
 	/**
@@ -231,14 +257,13 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			String ipAddress, long conversationId) {
 		long rowId = -1;
 
-		SQLiteDatabase db = getReadableDatabase();
+		SQLiteDatabase db = getWritableDatabase();
 		String query = "SELECT * FROM " + TABLE_NAME_PARTICIPANT + " WHERE "
 				+ PARTICIPANT_IDENTIFICATION + " = '"
 				+ participantIdentification + "' AND "
 				+ PARTICIPANT_CONVERSATION_ID + " = " + conversationId;
 		Cursor c = db.rawQuery(query, null);
 		if (c.getCount() == 0) {
-			db = getWritableDatabase();
 			ContentValues values = new ContentValues();
 			values.put(PARTICIPANT_IDENTIFICATION, participantIdentification);
 			values.put(PARTICIPANT_CONVERSATION_ID, conversationId);
@@ -246,7 +271,6 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			values.put(PARTICIPANT_STATE, 1);
 			rowId = db.insert(TABLE_NAME_PARTICIPANT, null, values);
 		} else {
-			db = getWritableDatabase();
 			c.moveToLast();
 			rowId = c.getLong(c.getColumnIndex(PARTICIPANT_ID));
 			ContentValues values = new ContentValues();
@@ -450,10 +474,12 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 				+ CONVERSATION_OPEN + " = 1";
 		Cursor c = db.rawQuery(query, null);
 		if (c.getCount() == 0) {
+			c.close();
 			return -1;
 		} else {
 			c.moveToFirst();
 			long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+			c.close();
 			return conversationId;
 		}
 	}
@@ -566,7 +592,7 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		c.close();
 		return participantKnown;
 	}
-	
+
 	/**
 	 * Checks whether a message is already in the database
 	 * 
@@ -596,9 +622,8 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	 */
 	public void cleanDatabase() {
 		SQLiteDatabase db = getWritableDatabase();
-		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_CONVERSATION);
-		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_PARTICIPANT);
-		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME_MESSAGE);
-		onCreate(db);
+		db.execSQL("DELETE FROM " + TABLE_NAME_CONVERSATION);
+		db.execSQL("DELETE FROM " + TABLE_NAME_PARTICIPANT);
+		db.execSQL("DELETE FROM " + TABLE_NAME_MESSAGE);
 	}
 }
