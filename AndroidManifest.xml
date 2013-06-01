@@ -44,6 +44,11 @@
             android:enabled="true"
             android:exported="true" >
         </service>
+        
+        <service android:name=".service.ProcessUnicastMessageIntentService" />
+        <service android:name=".service.ProcessBroadcastMessageIntentService" />
+        <service android:name=".service.SendBroadcastIntentService" />
+        <service android:name=".service.SendUnicastIntentService" />
 
         <activity
             android:name=".MainActivity"
