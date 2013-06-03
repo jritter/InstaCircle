@@ -279,7 +279,6 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 					+ rowId, null);
 		}
 
-		db.close();
 		return rowId;
 	}
 
@@ -472,15 +471,19 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		SQLiteDatabase db = getReadableDatabase();
 		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE "
 				+ CONVERSATION_OPEN + " = 1";
-		Cursor c = db.rawQuery(query, null);
-		if (c.getCount() == 0) {
-			c.close();
+		try{
+			Cursor c = db.rawQuery(query, null);
+			if (c.getCount() == 0) {
+				c.close();
+				return -1;
+			} else {
+				c.moveToFirst();
+				long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+				c.close();
+				return conversationId;
+			}
+		} catch (Exception e){
 			return -1;
-		} else {
-			c.moveToFirst();
-			long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
-			c.close();
-			return conversationId;
 		}
 	}
 
@@ -601,7 +604,9 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	 * @return true if already saved, false otherwise
 	 */
 	public boolean isMessageInDatabase(Message msg) {
-		boolean messageInDatabase = false;
+		try{
+			boolean messageInDatabase = false;
+	
 		SQLiteDatabase db = getReadableDatabase();
 		String query = "SELECT * FROM " + TABLE_NAME_MESSAGE + " m, "
 				+ TABLE_NAME_PARTICIPANT + " p WHERE p."
@@ -615,6 +620,9 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		}
 		c.close();
 		return messageInDatabase;
+		} catch (Exception e){
+			return false;
+		}
 	}
 
 	/**
