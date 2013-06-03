@@ -10,36 +10,41 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Enumeration;
 import java.util.Random;
 
 import android.app.IntentService;
+import android.content.Context;
 import android.content.Intent;
+import android.net.DhcpInfo;
+import android.net.wifi.WifiManager;
+import android.util.Log;
 import ch.bfh.instacircle.Message;
 
 public class SendBroadcastIntentService extends IntentService {
-	
+
 	private static final String TAG = NetworkService.class.getSimpleName();
 	private static final String PREFS_NAME = "network_preferences";
-	
+
 	private InetAddress broadcast;
 	private DatagramSocket s;
 	private String cipherKey;
-	
+
 	private Random random;
-	
+
 	private CipherHandler cipherHandler;
 
 	public SendBroadcastIntentService() {
 		super(TAG);
 	}
-	
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		
-		
+
+
 		// Unfortunately the broadcast address is not available immediately
 		// after the network connection is acutally indicated as ready...
 		do {
@@ -56,20 +61,20 @@ public class SendBroadcastIntentService extends IntentService {
 		// Reading the cipher key from the preferences file
 		cipherKey = getSharedPreferences(PREFS_NAME, 0).getString("password",
 				"N/A");
-		
+
 		cipherHandler = new CipherHandler(cipherKey.getBytes());
-		
+
 		random = new SecureRandom();
-		
+
 		return super.onStartCommand(intent, flags, startId);
 	}
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		
+
 		Message msg = (Message) intent.getSerializableExtra("message");
-		
-		
+
+
 		if (broadcast == null) {
 			broadcast = getBroadcastAddress();
 		}
@@ -91,7 +96,7 @@ public class SendBroadcastIntentService extends IntentService {
 			byte[] length = b.array();
 
 			byte[] bytesToSend = new byte[length.length
-					+ encryptedBytes.length];
+			                              + encryptedBytes.length];
 
 			// contatenate the length and the payload
 			System.arraycopy(length, 0, bytesToSend, 0, length.length);
@@ -102,7 +107,7 @@ public class SendBroadcastIntentService extends IntentService {
 			s = new DatagramSocket();
 			s.setBroadcast(true);
 			s.setReuseAddress(true);
-			
+
 			DatagramPacket p = new DatagramPacket(bytesToSend,
 					bytesToSend.length, broadcast, random.nextInt(50) + 12300);
 			s.send(p);
@@ -116,7 +121,7 @@ public class SendBroadcastIntentService extends IntentService {
 	public void onDestroy() {
 		super.onDestroy();
 	}
-	
+
 	/**
 	 * Method to extract the broadcastaddress of the current network
 	 * configuration
@@ -125,7 +130,7 @@ public class SendBroadcastIntentService extends IntentService {
 	 */
 	public InetAddress getBroadcastAddress() {
 		InetAddress found_bcast_address = null;
-		System.setProperty("java.net.preferIPv4Stack", "true");
+		/*System.setProperty("java.net.preferIPv4Stack", "true");
 		try {
 			Enumeration<NetworkInterface> niEnum = NetworkInterface
 					.getNetworkInterfaces();
@@ -165,11 +170,28 @@ public class SendBroadcastIntentService extends IntentService {
 			}
 		} catch (SocketException e) {
 			e.printStackTrace();
+		}*/
+
+		//Added by Phil
+		//http://stackoverflow.com/questions/2993874/android-broadcast-address
+		WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		DhcpInfo dhcp = wifi.getDhcpInfo();
+
+		int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+		byte[] quads = new byte[4];
+		for (int k = 0; k < 4; k++)
+			quads[k] = (byte) (broadcast >> (k * 8));
+		try {
+			found_bcast_address =  InetAddress.getByAddress(quads);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
 		}
+
+		Log.e(this.getClass().getSimpleName(), "Broadcast address is "+found_bcast_address);
 
 		return found_bcast_address;
 	}
-	
-	
+
+
 
 }
