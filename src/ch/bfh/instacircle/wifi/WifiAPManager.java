@@ -223,7 +223,7 @@ public class WifiAPManager {
 			state = (Integer) method2.invoke(wifi);
 			Log.d(TAG, "State: " + state);
 		} catch (Exception e) {
-			Log.e(TAG, e.getMessage());
+			Log.e(TAG, ""+e.getMessage());
 			// toastText += "ERROR " + e.getMessage();
 		}
 

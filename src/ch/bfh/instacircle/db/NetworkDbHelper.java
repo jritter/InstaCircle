@@ -278,8 +278,6 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 			db.update(TABLE_NAME_PARTICIPANT, values, PARTICIPANT_ID + " = "
 					+ rowId, null);
 		}
-
-		db.close();
 		return rowId;
 	}
 
@@ -472,15 +470,19 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 		SQLiteDatabase db = getReadableDatabase();
 		String query = "SELECT * FROM " + TABLE_NAME_CONVERSATION + " WHERE "
 				+ CONVERSATION_OPEN + " = 1";
-		Cursor c = db.rawQuery(query, null);
-		if (c.getCount() == 0) {
-			c.close();
+		try{
+			Cursor c = db.rawQuery(query, null);
+			if (c.getCount() == 0) {
+				c.close();
+				return -1;
+			} else {
+				c.moveToFirst();
+				long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
+				c.close();
+				return conversationId;
+			}
+		} catch (Exception e){
 			return -1;
-		} else {
-			c.moveToFirst();
-			long conversationId = c.getLong(c.getColumnIndex(CONVERSATION_ID));
-			c.close();
-			return conversationId;
 		}
 	}
 
@@ -602,19 +604,23 @@ public class NetworkDbHelper extends SQLiteOpenHelper {
 	 */
 	public boolean isMessageInDatabase(Message msg) {
 		boolean messageInDatabase = false;
-		SQLiteDatabase db = getReadableDatabase();
-		String query = "SELECT * FROM " + TABLE_NAME_MESSAGE + " m, "
-				+ TABLE_NAME_PARTICIPANT + " p WHERE p."
-				+ PARTICIPANT_IDENTIFICATION + " = '" + msg.getSender()
-				+ "' AND m." + MESSAGES_SEQUENCE_NUMBER + " = "
-				+ msg.getSequenceNumber() + " AND m." + MESSAGE_SENDER_ID
-				+ " = p." + PARTICIPANT_ID + " AND p." + PARTICIPANT_CONVERSATION_ID + " = "  + getOpenConversationId() + ";";
-		Cursor c = db.rawQuery(query, null);
-		if (c.getCount() > 0) {
-			messageInDatabase = true;
+		try{ 
+			SQLiteDatabase db = getReadableDatabase();
+			String query = "SELECT * FROM " + TABLE_NAME_MESSAGE + " m, "
+					+ TABLE_NAME_PARTICIPANT + " p WHERE p."
+					+ PARTICIPANT_IDENTIFICATION + " = '" + msg.getSender()
+					+ "' AND m." + MESSAGES_SEQUENCE_NUMBER + " = "
+					+ msg.getSequenceNumber() + " AND m." + MESSAGE_SENDER_ID
+					+ " = p." + PARTICIPANT_ID + " AND p." + PARTICIPANT_CONVERSATION_ID + " = "  + getOpenConversationId() + ";";
+			Cursor c = db.rawQuery(query, null);
+			if (c.getCount() > 0) {
+				messageInDatabase = true;
+			}
+			c.close();
+			return messageInDatabase;
+		} catch (Exception e){
+			return false;
 		}
-		c.close();
-		return messageInDatabase;
 	}
 
 	/**

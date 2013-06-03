@@ -165,12 +165,12 @@ public class ProcessBroadcastMessageIntentService extends IntentService {
 	
 			if (msg.getMessageType() == Message.MSG_MSGLEAVE
 					&& msg.getSender().equals(identification)) {
-				Intent stopServiceIntent = new Intent(this, NetworkService.class);
-				stopService(stopServiceIntent);
 				if (msg.getMessage().equals(Message.DELETE_DB)
 						&& msg.getSender().equals(identification)) {
 					dbHelper.cleanDatabase();
 				}
+				Intent stopServiceIntent = new Intent(this, NetworkService.class);
+				stopService(stopServiceIntent);
 			} else {
 				// otherwise notify the UI that a new message has been arrived
 				Intent messageArrivedIntent = new Intent("messageArrived");
