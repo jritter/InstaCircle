@@ -23,7 +23,6 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import ch.bfh.instacircle.MainActivity;
 import ch.bfh.instacircle.Message;
-import ch.bfh.instacircle.NetworkActiveActivity;
 import ch.bfh.instacircle.R;
 import ch.bfh.instacircle.db.NetworkDbHelper;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
