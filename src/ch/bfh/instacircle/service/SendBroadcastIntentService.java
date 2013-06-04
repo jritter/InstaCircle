@@ -23,6 +23,8 @@ import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 import ch.bfh.instacircle.Message;
+import ch.bfh.instacircle.db.NetworkDbHelper;
+import ch.bfh.instacircle.wifi.WifiAPManager;
 
 public class SendBroadcastIntentService extends IntentService {
 
@@ -113,7 +115,22 @@ public class SendBroadcastIntentService extends IntentService {
 			s.send(p);
 			s.close();
 		} catch (IOException e) {
+			Log.e(this.getClass().getSimpleName(), "Broadcast not sent");
 			e.printStackTrace();
+			//When broadcast could not be send and it is a LEAVE message, then we end the conversation
+			if (msg.getMessageType() == Message.MSG_MSGLEAVE) {
+				if (msg.getMessage().equals(Message.DELETE_DB)) {
+					try{
+						NetworkDbHelper.getInstance(this).cleanDatabase();
+						Log.d(TAG, "Database cleaned.");
+					} catch (Exception ex){
+						Log.e(TAG, "Database coudn't be cleaned.");
+					}
+
+				}
+				Intent stopServiceIntent = new Intent(this, NetworkService.class);
+				stopService(stopServiceIntent);
+			} 
 		}
 	}
 
@@ -130,66 +147,72 @@ public class SendBroadcastIntentService extends IntentService {
 	 */
 	public InetAddress getBroadcastAddress() {
 		InetAddress found_bcast_address = null;
-		/*System.setProperty("java.net.preferIPv4Stack", "true");
-		try {
-			Enumeration<NetworkInterface> niEnum = NetworkInterface
-					.getNetworkInterfaces();
-			while (niEnum.hasMoreElements()) {
-				NetworkInterface ni = niEnum.nextElement();
 
-				if (ni.getDisplayName().contains("p2p-wlan")) {
-					for (InterfaceAddress interfaceAddress : ni
-							.getInterfaceAddresses()) {
+		WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+		if(new WifiAPManager().isWifiAPEnabled(wifiManager)){
 
-						found_bcast_address = interfaceAddress.getBroadcast();
-					}
-					if (found_bcast_address != null) {
-						break;
-					}
-				}
-			}
-
-			if (found_bcast_address == null) {
-				niEnum = NetworkInterface.getNetworkInterfaces();
+			System.setProperty("java.net.preferIPv4Stack", "true");
+			try {
+				Enumeration<NetworkInterface> niEnum = NetworkInterface
+						.getNetworkInterfaces();
 				while (niEnum.hasMoreElements()) {
 					NetworkInterface ni = niEnum.nextElement();
-					if (!ni.isLoopback()) {
-						for (InterfaceAddress interfaceAddress : ni
-								.getInterfaceAddresses()) {
 
-							found_bcast_address = interfaceAddress
-									.getBroadcast();
+					if (ni.getDisplayName().contains("p2p-wlan")) {
+						for (InterfaceAddress interfaceAddress : ni.getInterfaceAddresses()) {
+
+							found_bcast_address = interfaceAddress.getBroadcast();
 						}
-
 						if (found_bcast_address != null) {
 							break;
 						}
-
 					}
 				}
+
+				if (found_bcast_address == null) {
+					niEnum = NetworkInterface.getNetworkInterfaces();
+					while (niEnum.hasMoreElements()) {
+						NetworkInterface ni = niEnum.nextElement();
+						if (!ni.isLoopback()) {
+							for (InterfaceAddress interfaceAddress : ni
+									.getInterfaceAddresses()) {
+
+								found_bcast_address = interfaceAddress
+										.getBroadcast();
+							}
+
+							if (found_bcast_address != null) {
+								break;
+							}
+
+						}
+					}
+				}
+			} catch (SocketException e) {
+				e.printStackTrace();
 			}
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}*/
 
-		//Added by Phil
-		//http://stackoverflow.com/questions/2993874/android-broadcast-address
-		WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		DhcpInfo dhcp = wifi.getDhcpInfo();
+		} else {
+			//source: http://stackoverflow.com/questions/2993874/android-broadcast-address
+			WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+			DhcpInfo dhcp = wifi.getDhcpInfo();
 
-		int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
-		byte[] quads = new byte[4];
-		for (int k = 0; k < 4; k++)
-			quads[k] = (byte) (broadcast >> (k * 8));
-		try {
-			found_bcast_address =  InetAddress.getByAddress(quads);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+			byte[] quads = new byte[4];
+			for (int k = 0; k < 4; k++)
+				quads[k] = (byte) (broadcast >> (k * 8));
+			try {
+				found_bcast_address =  InetAddress.getByAddress(quads);
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			}
+
 		}
-
 		Log.e(this.getClass().getSimpleName(), "Broadcast address is "+found_bcast_address);
 
 		return found_bcast_address;
+
+
 	}
 
 
