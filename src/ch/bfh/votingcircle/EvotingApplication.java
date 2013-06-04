@@ -92,7 +92,7 @@ public class EvotingApplication extends Application {
 		dm.setActive(false);
 		rsm.close();
 		smm.reset();
-		//Reset the interface
+		//Reset the interface to InstaCircle
 		Intent intentMessage = new Intent("resetInterface");
 		LocalBroadcastManager.getInstance(dm.getContext()).sendBroadcast(intentMessage);
 		this.onCreate();

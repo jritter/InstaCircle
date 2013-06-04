@@ -33,9 +33,6 @@ public class VoteActivity extends ListActivity {
 		DataManager dm = ((EvotingApplication)this.getApplication()).getDataManager();
 		
 		// initializing the adapter
-		List<String> list = new ArrayList<String>();
-		list.add("No");
-		list.add("Yes");
 		String question = dm.getQuestion();
 		TextView tv = (TextView)findViewById(R.id.question);
 		tv.setText(question);

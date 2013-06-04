@@ -129,7 +129,7 @@ public class EvotingMainActivity extends ListActivity {
 		intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
 
 		//LocalBroadcastManager.getInstance(this).registerReceiver(wifiEventReceiver, intentFilter);
-		this.registerReceiver(wifiEventReceiver, intentFilter);
+		//this.registerReceiver(wifiEventReceiver, intentFilter);
 	}
 
 	@Override
@@ -146,7 +146,7 @@ public class EvotingMainActivity extends ListActivity {
 		((EvotingApplication)this.getApplication()).reset();
 
 		LocalBroadcastManager.getInstance(dm.getEvotingMainActivity()).unregisterReceiver(participantsUpdater);
-		this.unregisterReceiver(wifiEventReceiver);
+		//this.unregisterReceiver(wifiEventReceiver);
 	}
 
 	/*
@@ -269,7 +269,7 @@ public class EvotingMainActivity extends ListActivity {
 	/**
 	 * If network is disconnected, a dialog inform him
 	 */
-	private BroadcastReceiver wifiEventReceiver = new BroadcastReceiver() {
+	/*private BroadcastReceiver wifiEventReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String PREFS_NAME = "network_preferences";
@@ -313,7 +313,7 @@ public class EvotingMainActivity extends ListActivity {
 				
 			
 		}
-	};
+	};*/
 
 
 	/************************ UI Manipulation methods ************************/ 

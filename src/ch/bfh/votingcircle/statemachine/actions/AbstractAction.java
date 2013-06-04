@@ -72,7 +72,7 @@ public abstract class AbstractAction implements Action {
 
 		// Subscribing to the messageArrived events to update immediately
 		LocalBroadcastManager.getInstance(dm.getContext()).registerReceiver(
-				this.mMessageReceiver, new IntentFilter("messageArrived"));
+				this.messageReceiver, new IntentFilter("messageArrived"));
 		
 	}
 	
@@ -90,7 +90,7 @@ public abstract class AbstractAction implements Action {
 	/**
 	 * Store the received messages if they are from the interesting type for this step 
 	 */
-	protected BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+	protected BroadcastReceiver messageReceiver = new BroadcastReceiver() {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -128,7 +128,7 @@ public abstract class AbstractAction implements Action {
 	 * if the state of a participant has been
 	 * changed and she has leaved the discussion, we can put her in the excluded participants
 	 */
-	protected BroadcastReceiver participantsLeaved = new BroadcastReceiver() {
+	protected BroadcastReceiver participantsLeft = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if(!dm.isActive()) return;
@@ -297,8 +297,8 @@ public abstract class AbstractAction implements Action {
 	public void reset(){
 		this.stopTimer();
 
-		LocalBroadcastManager.getInstance(dm.getContext()).unregisterReceiver(mMessageReceiver);
-		LocalBroadcastManager.getInstance(dm.getContext()).unregisterReceiver(participantsLeaved);
+		LocalBroadcastManager.getInstance(dm.getContext()).unregisterReceiver(messageReceiver);
+		LocalBroadcastManager.getInstance(dm.getContext()).unregisterReceiver(participantsLeft);
 	}
 	
 	public void executeCallback(Intent data) {

@@ -76,7 +76,7 @@ public class TallyingAction extends AbstractAction {
 
 		//Listen to participant leaved events
 		IntentFilter intentFilter = new IntentFilter("participantChangedState");
-		LocalBroadcastManager.getInstance(dm.getContext()).registerReceiver(participantsLeaved, intentFilter);
+		LocalBroadcastManager.getInstance(dm.getContext()).registerReceiver(participantsLeft, intentFilter);
 
 		//when not apply transition to recovery round
 		if(!this.dm.getExcludedParticipants().isEmpty() && !(message instanceof AllRecoveringMessagesReceivedEvent)){

@@ -58,7 +58,7 @@ public class InitAction extends AbstractAction {
 
 		//Listen to participant leaved events
 		IntentFilter intentFilter = new IntentFilter("participantChangedState");
-		LocalBroadcastManager.getInstance(dm.getContext()).registerReceiver(participantsLeaved, intentFilter);
+		LocalBroadcastManager.getInstance(dm.getContext()).registerReceiver(participantsLeft, intentFilter);
 
 		//If the initiator of the voting process is me
 		logger.error("initiator is "+this.dm.getInitiator());
@@ -161,8 +161,8 @@ public class InitAction extends AbstractAction {
 					this.stopTimer();
 					this.actionTerminated = true;
 					// Unregister
-					LocalBroadcastManager.getInstance(this.dm.getContext()).unregisterReceiver(this.mMessageReceiver);
-					LocalBroadcastManager.getInstance(this.dm.getContext()).unregisterReceiver(this.participantsLeaved);
+					LocalBroadcastManager.getInstance(this.dm.getContext()).unregisterReceiver(this.messageReceiver);
+					LocalBroadcastManager.getInstance(this.dm.getContext()).unregisterReceiver(this.participantsLeft);
 				}
 			}
 		}
