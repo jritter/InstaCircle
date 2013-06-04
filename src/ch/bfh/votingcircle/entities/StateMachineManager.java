@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import ch.bfh.votingcircle.statemachine.actions.CommitmentRoundAction;
-import ch.bfh.votingcircle.statemachine.actions.ExitAction;
+import ch.bfh.votingcircle.statemachine.actions.ResultAction;
 import ch.bfh.votingcircle.statemachine.actions.InitAction;
 import ch.bfh.votingcircle.statemachine.actions.RecoveryRoundAction;
 import ch.bfh.votingcircle.statemachine.actions.SetupRoundAction;
@@ -87,7 +87,7 @@ public class StateMachineManager implements Runnable {
 		State vote = new State("vote", StateType.ACTIVE, votingRoundAction, null);
 		State tally = new State("tally", StateType.ACTIVE, tallyingAction, null);
 		State recovery = new State("recover", StateType.ACTIVE, recoveryRoundAction, null);
-		State exit = new State("exit", StateType.END, new ExitAction(this.dataManager), null);
+		State exit = new State("exit", StateType.END, new ResultAction(this.dataManager), null);
 
 		
 		/*Define Guards (=conditions) for transitions*/

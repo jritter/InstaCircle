@@ -27,11 +27,11 @@ import com.continuent.tungsten.fsm.core.TransitionRollbackException;
  * @author Philémon von Bergen
  * 
  */
-public class ExitAction implements Action {
+public class ResultAction implements Action {
 
 	private DataManager dm;
 	
-	public ExitAction(DataManager dm){
+	public ResultAction(DataManager dm){
 		this.dm = dm;
 	}
 	
