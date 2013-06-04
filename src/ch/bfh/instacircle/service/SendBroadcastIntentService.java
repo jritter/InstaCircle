@@ -208,7 +208,7 @@ public class SendBroadcastIntentService extends IntentService {
 			}
 
 		}
-		Log.e(this.getClass().getSimpleName(), "Broadcast address is "+found_bcast_address);
+		Log.d(this.getClass().getSimpleName(), "Broadcast address is "+found_bcast_address);
 
 		return found_bcast_address;
 

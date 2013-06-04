@@ -5,12 +5,10 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.log4j.Logger;
 
 import ch.bfh.instacircle.Message;
@@ -22,10 +20,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.DhcpInfo;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 /**
  * Class representing the interface between InstaCircle and the voting application
@@ -209,31 +205,7 @@ public class InstaCircleInterface {
 	 * @autor http://stackoverflow.com/questions/6064510/how-to-get-ip-address-of-the-device
 	 */
 	private String getIPAddress(boolean useIPv4) {
-		/*try {
-			List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-			for (NetworkInterface intf : interfaces) {
-				List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-				for (InetAddress addr : addrs) {
-					if (!addr.isLoopbackAddress()) {
-						String sAddr = addr.getHostAddress().toUpperCase();
-						boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr); 
-						if (useIPv4) {
-							if (isIPv4) 
-								return sAddr;
-						} else {
-							if (!isIPv4) {
-								int delim = sAddr.indexOf('%'); // drop ip6 port suffix
-								return delim<0 ? sAddr : sAddr.substring(0, delim);
-							}
-						}
-					}
-				}
-			}
-		} catch (Exception ex) { 
-			//if exception occurred return null
-		}
-		return null;*/
-
+		
 		WifiManager wifiManager = (WifiManager) this.dm.getContext().getSystemService(Context.WIFI_SERVICE);
 		String ipString = null;
 
@@ -275,13 +247,6 @@ public class InstaCircleInterface {
 				e.printStackTrace();
 			}
 		}
-
-
-		/*WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-		int ip = wifiInfo.getIpAddress();
-		String ipString = String.format("%d.%d.%d.%d",(ip & 0xff),(ip >> 8 & 0xff),(ip >> 16 & 0xff),(ip >> 24 & 0xff));
-		 */
-		/**/
 
 		return ipString;
 	}

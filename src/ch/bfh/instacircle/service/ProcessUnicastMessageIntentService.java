@@ -139,6 +139,7 @@ public class ProcessUnicastMessageIntentService extends IntentService {
 					ObjectInputStream ois = new ObjectInputStream(
 							new ByteArrayInputStream(Base64.decode(
 									msg.getMessage(), Base64.DEFAULT)));
+					@SuppressWarnings("unchecked")
 					ArrayList<Message> deserializedMessages = (ArrayList<Message>) ois
 							.readObject();
 					// iterate over the list and hanling them as if they had just

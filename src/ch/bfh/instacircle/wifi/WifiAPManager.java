@@ -1,14 +1,3 @@
-/*
- *  UniCrypt Cryptographic Library
- *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
- *  All rights reserved.
- *
- *  Distributable under GPL license.
- *  See terms of license at gnu.org.
- *  
- *  Parts of this have been adopted from a post at stackoverflow.com
- *  http://stackoverflow.com/a/7049074/1233435
- */
 
 package ch.bfh.instacircle.wifi;
 

@@ -1,12 +1,3 @@
-/*
- *  UniCrypt Cryptographic Library
- *  Copyright (c) 2013 Berner Fachhochschule, Biel, Switzerland.
- *  All rights reserved.
- *
- *  Distributable under GPL license.
- *  See terms of license at gnu.org.
- *  
- */
 
 package ch.bfh.instacircle;
 
@@ -452,6 +443,7 @@ public class MainActivity extends Activity implements OnItemClickListener,
 		} else {
 			// extract the Hashmap assigned to the position which has been
 			// clicked
+			@SuppressWarnings("unchecked")
 			HashMap<String, Object> hash = (HashMap<String, Object>) listview
 					.getAdapter().getItem(position);
 
