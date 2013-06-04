@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+   <item
+        android:id="@+id/display_qrcode"
+        android:icon="@drawable/glyphicons_258_qrcode"
+        android:title="@string/display_qrcode"
+        android:showAsAction="ifRoom" />
+   
+   <item
+        android:id="@+id/leave_network"
+        android:icon="@drawable/glyphicons_063_power"
+        android:title="@string/leave_network"
+        android:showAsAction="ifRoom" />
+
+</menu>

@@ -4,5 +4,9 @@
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/unicrypt"/>
+	<classpathentry exported="true" kind="lib" path="libs/android-logging-log4j-1.0.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/log4j-1.2.15.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/tungsten-fsm.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

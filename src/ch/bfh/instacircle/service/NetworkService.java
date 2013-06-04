@@ -28,6 +28,7 @@ import ch.bfh.instacircle.R;
 import ch.bfh.instacircle.db.NetworkDbHelper;
 import ch.bfh.instacircle.wifi.AdhocWifiManager;
 import ch.bfh.instacircle.wifi.WifiAPManager;
+import ch.bfh.votingcircle.EvotingMainActivity;
 
 /**
  * This class implements an Android service which runs in the background. It
@@ -124,6 +125,7 @@ public class NetworkService extends Service {
 		// Initializing the dbHelper in order to get access to the database
 		dbHelper = NetworkDbHelper.getInstance(this);
 
+		/* Commented by Phil: no more needed
 		// Create a pending intent which will be invoked after tapping on the
 		// Android notification
 		Intent notificationIntent = new Intent(this,
@@ -149,7 +151,7 @@ public class NetworkService extends Service {
 
 		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-		notificationManager.notify(TAG, 1, notification);
+		notificationManager.notify(TAG, 1, notification);*/
 
 		udpBroadcastReceiverThreads = new UDPBroadcastReceiverThread[100];
 		tcpUnicastReceiverThreads = new TCPUnicastReceiverThread[100];
@@ -179,12 +181,48 @@ public class NetworkService extends Service {
 		joinNetwork(getSharedPreferences(PREFS_NAME, 0).getString(
 				"identification", "N/A"));
 
+		//Added by Phil
+		// start the EvotingMainActivity
+		intent = new Intent(this, EvotingMainActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		intent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+		startActivity(intent);
+
+		// Create a pending intent which will be invoked after tapping on the
+		// Android notification
+		Intent notificationIntent = new Intent(this,
+				EvotingMainActivity.class);
+		notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		notificationIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		notificationIntent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+		PendingIntent pendingNotificationIntent = PendingIntent.getActivity(
+				this, 0, notificationIntent, notificationIntent.getFlags());
+
+		// Setting up the notification which is being displayed
+		Notification.Builder notificationBuilder = new Notification.Builder(
+				this);
+		notificationBuilder.setContentTitle(getResources().getString(
+				R.string.app_name));
+		notificationBuilder
+		.setContentText("An InstaCircle Chat session is running. Tap to bring in front.");
+		notificationBuilder
+		.setSmallIcon(R.drawable.glyphicons_244_conversation);
+		notificationBuilder.setContentIntent(pendingNotificationIntent);
+		notificationBuilder.setOngoing(true);
+		Notification notification = notificationBuilder.getNotification();
+
+		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+		notificationManager.notify(TAG, 1, notification);
+		
+		/* Commented by Phil, no more needed
 		// start the NetworkActiveActivity
 		intent = new Intent(this, NetworkActiveActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 		intent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
-		startActivity(intent);
+		startActivity(intent);*/
 		return super.onStartCommand(intent, flags, startId);
 	}
 

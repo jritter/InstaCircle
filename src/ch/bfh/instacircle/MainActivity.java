@@ -127,6 +127,8 @@ public class MainActivity extends Activity implements OnItemClickListener,
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		/*
+		Added by Phil: comments. no more needed 
 		// redirect immediately to the NetworkActiveActivity if the
 		// NetworkService is already running
 		if (isServiceRunning()) {
@@ -137,7 +139,7 @@ public class MainActivity extends Activity implements OnItemClickListener,
 			intent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
 			startActivity(intent);
-		}
+		}*/
 
 		// applying the layout
 		setContentView(R.layout.activity_main);
